@@ -1,0 +1,14 @@
+name: keep-supabase-alive
+on:
+  schedule:
+    - cron: '17 3 * * *'   # 매일 UTC 03:17에 실행
+  workflow_dispatch:        # 수동 실행 버튼
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping Supabase
+        run: |
+          curl -s -o /dev/null -w "status=%{http_code}\n" \
+            "https://jjjsmpakuinglydijuqx.supabase.co/rest/v1/leave_sync?select=id&limit=1" \
+            -H "apikey: sb_publishable_jw6mQ0d3vsJCHlTNrH41-A_iKXSmibP"
