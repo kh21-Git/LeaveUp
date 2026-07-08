@@ -1,0 +1,1036 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>내 연차·반차 관리</title>
+<link rel="preconnect" href="https://cdn.jsdelivr.net">
+<style>
+@import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css');
+
+:root{
+  --navy:#1B4886;--navy-dark:#143a6d;--green:#7FAD47;--green-dark:#6b9639;
+  --gray:#696A6C;--line:#e4e7ec;--bg:#f4f6f9;--card:#fff;--text:#1f2430;
+  --muted:#7b828f;--amber:#e0a020;--red:#d64545;
+  --shadow:0 1px 3px rgba(20,30,50,.06),0 1px 2px rgba(20,30,50,.04);
+  --shadow-lg:0 8px 30px rgba(20,30,50,.12);--radius:12px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{-webkit-text-size-adjust:100%}
+body{font-family:'Pretendard',-apple-system,BlinkMacSystemFont,system-ui,sans-serif;background:var(--bg);color:var(--text);line-height:1.5;-webkit-font-smoothing:antialiased;font-size:14px}
+button{font-family:inherit;cursor:pointer;border:none;background:none}
+input,select,textarea{font-family:inherit;font-size:14px}
+
+/* Header */
+.appbar{background:var(--navy);color:#fff;position:sticky;top:0;z-index:50;box-shadow:0 2px 12px rgba(27,72,134,.25)}
+.appbar-inner{max-width:1080px;margin:0 auto;padding:0 24px;height:60px;display:flex;align-items:center;gap:16px}
+.brand{display:flex;align-items:center;gap:10px;font-weight:700;font-size:17px;letter-spacing:-.3px}
+.brand .logo{width:30px;height:30px;border-radius:8px;background:var(--green);display:grid;place-items:center;font-size:16px;font-weight:800;color:#fff}
+.brand small{display:block;font-size:11px;font-weight:500;opacity:.75;letter-spacing:0}
+.appbar-right{margin-left:auto;display:flex;align-items:center;gap:12px}
+.save-dot{display:flex;align-items:center;gap:6px;font-size:12px;opacity:.85}
+.save-dot i{width:8px;height:8px;border-radius:50%;background:var(--green);display:inline-block;box-shadow:0 0 0 3px rgba(127,173,71,.3)}
+
+/* Tabs */
+.tabs{background:var(--card);border-bottom:1px solid var(--line);position:sticky;top:60px;z-index:40}
+.tabs-inner{max-width:1080px;margin:0 auto;padding:0 24px;display:flex;gap:2px;overflow-x:auto}
+.tab{padding:14px 18px;font-weight:600;color:var(--muted);font-size:14px;white-space:nowrap;border-bottom:2.5px solid transparent;transition:.15s}
+.tab:hover{color:var(--navy)}
+.tab.active{color:var(--navy);border-bottom-color:var(--navy)}
+
+/* Layout */
+.wrap{max-width:1080px;margin:0 auto;padding:24px}
+.page{display:none;animation:fade .25s ease}
+.page.active{display:block}
+@keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+.page-head{margin-bottom:20px}
+.page-head h1{font-size:22px;font-weight:700;letter-spacing:-.4px}
+.page-head p{color:var(--muted);font-size:13px;margin-top:2px}
+
+/* Cards */
+.card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow)}
+.card-pad{padding:20px}
+.card-head{padding:16px 20px;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;gap:12px}
+.card-head h2{font-size:15px;font-weight:700}
+
+/* Hero */
+.hero{background:linear-gradient(135deg,var(--navy) 0%,#2a5aa5 100%);color:#fff;border-radius:var(--radius);padding:24px 26px;margin-bottom:20px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:16px}
+.hero .who .nm{font-size:23px;font-weight:800;letter-spacing:-.4px}
+.hero .who .sub{font-size:12.5px;opacity:.85;margin-top:3px}
+.hero .big{text-align:right}
+.hero .big .n{font-size:42px;font-weight:800;line-height:1;font-variant-numeric:tabular-nums}
+.hero .big .l{font-size:12px;opacity:.85;margin-top:5px}
+
+/* Stats */
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:20px}
+.stat{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:16px 18px;box-shadow:var(--shadow);position:relative;overflow:hidden}
+.stat::before{content:"";position:absolute;left:0;top:0;bottom:0;width:4px;background:var(--navy)}
+.stat.g::before{background:var(--green)}
+.stat.a::before{background:var(--amber)}
+.stat.r::before{background:var(--red)}
+.stat .label{font-size:12px;color:var(--muted);font-weight:600}
+.stat .val{font-size:26px;font-weight:800;letter-spacing:-.5px;margin-top:4px;font-variant-numeric:tabular-nums}
+.stat .val small{font-size:14px;font-weight:600;color:var(--muted);margin-left:2px}
+
+/* Forms */
+.form-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px}
+.field{display:flex;flex-direction:column;gap:6px}
+.field label{font-size:12.5px;font-weight:600;color:#48505e}
+.field label .req{color:var(--red);margin-left:2px}
+.field input,.field select,.field textarea{border:1px solid var(--line);border-radius:8px;padding:9px 11px;background:#fff;color:var(--text);transition:.15s;width:100%}
+.field input:focus,.field select:focus,.field textarea:focus{outline:none;border-color:var(--navy);box-shadow:0 0 0 3px rgba(27,72,134,.1)}
+.field input[readonly]{background:#f4f6f9;color:var(--muted);font-weight:700}
+.hint{font-size:12px;color:var(--muted);margin-top:2px}
+.form-actions{display:flex;gap:8px;margin-top:16px;flex-wrap:wrap}
+
+/* Buttons */
+.btn{padding:9px 16px;border-radius:8px;font-weight:600;font-size:13.5px;display:inline-flex;align-items:center;gap:6px;transition:.15s;white-space:nowrap}
+.btn:active{transform:translateY(1px)}
+.btn-primary{background:var(--navy);color:#fff}
+.btn-primary:hover{background:var(--navy-dark)}
+.btn-green{background:var(--green);color:#fff}
+.btn-green:hover{background:var(--green-dark)}
+.btn-ghost{background:#fff;color:#48505e;border:1px solid var(--line)}
+.btn-ghost:hover{background:#f7f8fa;border-color:#cfd4dc}
+.btn-danger{background:#fff;color:var(--red);border:1px solid #f0cccc}
+.btn-danger:hover{background:#fdf3f3}
+.btn-sm{padding:5px 10px;font-size:12.5px;border-radius:6px}
+.btn-icon{padding:5px 9px;font-size:12.5px;border-radius:6px;background:#f2f4f7;color:#48505e;font-weight:600}
+.btn-icon:hover{background:#e6e9ee}
+.btn-icon.del:hover{background:#fdeaea;color:var(--red)}
+
+/* Balance panel */
+.balance{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:16px;background:#f8f9fb;border:1px solid var(--line);border-radius:10px;padding:14px 16px}
+.balance .i-label{font-size:11.5px;color:var(--muted);font-weight:600}
+.balance .i-val{font-size:20px;font-weight:800;margin-top:2px;font-variant-numeric:tabular-nums}
+.balance .i-val.g{color:var(--green-dark)}
+.balance .i-val.r{color:var(--red)}
+
+/* Filters */
+.filters{display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end}
+.filters .field{flex:1;min-width:130px}
+
+/* Tables */
+.table-scroll{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:13.5px}
+thead th{text-align:left;padding:11px 14px;background:#f8f9fb;color:#59616e;font-weight:700;font-size:12px;border-bottom:1px solid var(--line);white-space:nowrap;letter-spacing:.2px}
+tbody td{padding:11px 14px;border-bottom:1px solid #f0f2f5;vertical-align:middle;white-space:nowrap}
+tbody tr:last-child td{border-bottom:none}
+tbody tr:hover{background:#fafbfc}
+.num{font-variant-numeric:tabular-nums;text-align:right}
+
+/* Tags */
+.type-tag{padding:3px 8px;border-radius:6px;font-size:11.5px;font-weight:700}
+.t-full{background:#e8eef7;color:var(--navy)}
+.t-am{background:#eef5e4;color:var(--green-dark)}
+.t-pm{background:#f0edf7;color:#6b4b9c}
+
+/* Empty / setup */
+.empty{padding:44px 20px;text-align:center;color:var(--muted)}
+.empty .ico{font-size:34px;opacity:.4;margin-bottom:8px}
+.empty p{font-size:14px}
+.empty small{font-size:12.5px;opacity:.8}
+.setup{background:var(--card);border:1px dashed #c7cdd6;border-radius:var(--radius);padding:40px 24px;text-align:center}
+.setup .ico{font-size:40px;margin-bottom:10px}
+.setup h2{font-size:18px;font-weight:700}
+.setup p{color:var(--muted);font-size:13.5px;margin:6px 0 18px}
+
+/* Data mgmt */
+.data-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:14px}
+.data-item{border:1px solid var(--line);border-radius:10px;padding:16px;background:#fff;display:flex;flex-direction:column;gap:10px}
+.data-item h3{font-size:14px;font-weight:700}
+.data-item p{font-size:12.5px;color:var(--muted);flex:1}
+.data-item.danger-zone{border-color:#f0cccc;background:#fdf7f7}
+
+/* Toast */
+.toast-wrap{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);z-index:200;display:flex;flex-direction:column;gap:8px;align-items:center}
+.toast{background:#1f2430;color:#fff;padding:11px 18px;border-radius:10px;font-size:13.5px;font-weight:600;box-shadow:var(--shadow-lg);display:flex;align-items:center;gap:8px;animation:toastIn .25s ease}
+.toast.ok{background:#1c7a4a}.toast.warn{background:#b5741a}.toast.err{background:#b53838}
+@keyframes toastIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+
+/* Modal */
+.modal-back{position:fixed;inset:0;background:rgba(20,26,38,.5);z-index:150;display:none;align-items:center;justify-content:center;padding:20px}
+.modal-back.show{display:flex}
+.modal{background:#fff;border-radius:14px;max-width:420px;width:100%;box-shadow:var(--shadow-lg);animation:toastIn .2s ease;overflow:hidden}
+.modal-body{padding:24px}
+.modal-body h3{font-size:17px;font-weight:700;margin-bottom:8px}
+.modal-body p{color:#5b6472;font-size:13.5px;line-height:1.6}
+.modal-body .confirm-input{margin-top:14px}
+.modal-body .confirm-input input{width:100%;border:1px solid var(--line);border-radius:8px;padding:9px 11px}
+.modal-foot{padding:14px 24px;background:#f8f9fb;display:flex;justify-content:flex-end;gap:8px}
+
+/* Calendar */
+.cal-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:10px}
+.cal-nav{display:flex;align-items:center;gap:8px}
+.cal-title{font-size:17px;font-weight:800;min-width:120px;text-align:center;letter-spacing:-.3px}
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:6px}
+.cal-dow{text-align:center;font-size:12px;font-weight:700;color:var(--muted);padding:4px 0}
+.cal-dow.sun{color:var(--red)}
+.cal-dow.sat{color:var(--navy)}
+.cal-cell{min-height:84px;border:1px solid var(--line);border-radius:8px;padding:6px;background:#fff;cursor:pointer;transition:.12s;display:flex;flex-direction:column;gap:3px;overflow:hidden}
+.cal-cell:hover{border-color:var(--navy);box-shadow:0 0 0 3px rgba(27,72,134,.08)}
+.cal-cell.other{background:#fafbfc;cursor:default}
+.cal-cell.other:hover{border-color:var(--line);box-shadow:none}
+.cal-cell.today{border-color:var(--navy);background:#f2f6fc}
+.cal-daynum{font-size:12.5px;font-weight:700}
+.cal-cell.sun .cal-daynum{color:var(--red)}
+.cal-cell.sat .cal-daynum{color:var(--navy)}
+.cal-cell.other .cal-daynum{color:#c2c8d0}
+.cal-chip{font-size:10.5px;font-weight:700;padding:2px 5px;border-radius:4px;line-height:1.3;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.cal-chip.t-full{background:var(--navy);color:#fff}
+.cal-chip.t-am{background:var(--green);color:#fff}
+.cal-chip.t-pm{background:#6b4b9c;color:#fff}
+.lg{display:inline-block;width:11px;height:11px;border-radius:3px;vertical-align:-1px;margin-right:5px}
+.lg.t-full{background:var(--navy)}
+.lg.t-am{background:var(--green)}
+.lg.t-pm{background:#6b4b9c}
+
+@media(max-width:760px){.stats{grid-template-columns:1fr 1fr}}
+@media(max-width:640px){
+  .appbar-inner,.tabs-inner,.wrap{padding-left:14px;padding-right:14px}
+  .brand small{display:none}
+  .balance{grid-template-columns:1fr}
+  .cal-cell{min-height:58px;padding:4px;gap:2px}
+  .cal-chip{font-size:9px;padding:1px 3px}
+  .cal-grid{gap:4px}
+}
+</style>
+</head>
+<body>
+
+<header class="appbar">
+  <div class="appbar-inner">
+    <div class="brand">
+      <span class="logo">G</span>
+      <span><span id="appTitle">내 연차·반차 관리</span><small>Green IT Korea · My Leave</small></span>
+    </div>
+    <div class="appbar-right">
+      <span class="save-dot"><i></i> 자동 저장됨</span>
+    </div>
+  </div>
+</header>
+
+<nav class="tabs">
+  <div class="tabs-inner" id="tabBar">
+    <button class="tab active" data-page="summary">내 연차</button>
+    <button class="tab" data-page="calendar">캘린더</button>
+    <button class="tab" data-page="register">휴가 등록</button>
+    <button class="tab" data-page="history">휴가 내역</button>
+    <button class="tab" data-page="profile">내 정보</button>
+  </div>
+</nav>
+
+<main class="wrap">
+
+  <!-- ============ 내 연차 ============ -->
+  <section class="page active" id="page-summary">
+    <div id="summaryContent"></div>
+  </section>
+
+  <!-- ============ 캘린더 ============ -->
+  <section class="page" id="page-calendar">
+    <div class="page-head">
+      <h1>휴가 캘린더</h1>
+      <p>휴가 사용 내역을 달력으로 확인하고, 날짜를 눌러 바로 등록합니다.</p>
+    </div>
+    <div class="card">
+      <div class="card-pad">
+        <div class="cal-head">
+          <div class="cal-nav">
+            <button class="btn btn-ghost btn-sm" onclick="calPrev()">◀</button>
+            <div class="cal-title" id="calTitle">-</div>
+            <button class="btn btn-ghost btn-sm" onclick="calNext()">▶</button>
+          </div>
+          <div style="display:flex;align-items:center;gap:12px">
+            <span id="calMonthUsed" style="font-size:12.5px;color:var(--muted);font-weight:600"></span>
+            <button class="btn btn-ghost btn-sm" onclick="calToday()">오늘</button>
+          </div>
+        </div>
+        <div class="cal-grid" id="calDow"></div>
+        <div class="cal-grid" id="calGrid" style="margin-top:6px"></div>
+        <div style="display:flex;gap:16px;flex-wrap:wrap;margin-top:16px;font-size:12px;color:var(--muted)">
+          <span><i class="lg t-full"></i>연차</span>
+          <span><i class="lg t-am"></i>오전 반차</span>
+          <span><i class="lg t-pm"></i>오후 반차</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ 휴가 등록 ============ -->
+  <section class="page" id="page-register">
+    <div class="page-head">
+      <h1>휴가 등록</h1>
+      <p>본인의 연차 또는 반차 사용 내역을 등록합니다.</p>
+    </div>
+    <div class="card">
+      <div class="card-head"><h2 id="vacFormTitle">휴가 등록</h2></div>
+      <div class="card-pad">
+        <div class="form-grid">
+          <div class="field">
+            <label>휴가일<span class="req">*</span></label>
+            <input id="vacDate" type="date">
+          </div>
+          <div class="field">
+            <label>휴가 유형<span class="req">*</span></label>
+            <select id="vacType" onchange="showUsedDays()">
+              <option value="연차">연차 (1일)</option>
+              <option value="오전 반차">오전 반차 (0.5일)</option>
+              <option value="오후 반차">오후 반차 (0.5일)</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>사용일수</label>
+            <input id="vacDays" value="1" readonly>
+          </div>
+          <div class="field">
+            <label>사유</label>
+            <input id="vacReason" placeholder="예) 개인 사유">
+          </div>
+          <div class="field">
+            <label>비고</label>
+            <input id="vacMemo" placeholder="선택 입력">
+          </div>
+        </div>
+
+        <div class="balance">
+          <div><div class="i-label">총 연차</div><div class="i-val" id="balTotal">0</div></div>
+          <div><div class="i-label">사용 연차</div><div class="i-val" id="balUsed">0</div></div>
+          <div><div class="i-label">잔여 연차</div><div class="i-val g" id="balRemain">0</div></div>
+        </div>
+
+        <div class="form-actions">
+          <button class="btn btn-primary" id="vacSaveBtn" onclick="saveVacation()">휴가 등록</button>
+          <button class="btn btn-ghost" onclick="resetVacForm()">입력 초기화</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ 휴가 내역 ============ -->
+  <section class="page" id="page-history">
+    <div class="page-head">
+      <h1>휴가 내역</h1>
+      <p>등록한 휴가 사용 내역을 조회·수정·삭제합니다.</p>
+    </div>
+
+    <div class="card" style="margin-bottom:20px">
+      <div class="card-pad">
+        <div class="filters">
+          <div class="field"><label>휴가 유형</label>
+            <select id="hType" onchange="renderHistory()">
+              <option value="">전체</option>
+              <option value="연차">연차</option>
+              <option value="오전 반차">오전 반차</option>
+              <option value="오후 반차">오후 반차</option>
+            </select>
+          </div>
+          <div class="field"><label>시작일</label><input id="hFrom" type="date" onchange="renderHistory()"></div>
+          <div class="field"><label>종료일</label><input id="hTo" type="date" onchange="renderHistory()"></div>
+          <button class="btn btn-ghost" onclick="resetHistoryFilter()">초기화</button>
+          <button class="btn btn-green" onclick="downloadVacCSV()">CSV 다운로드</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="table-scroll">
+        <table>
+          <thead><tr>
+            <th>번호</th><th>휴가일</th><th>유형</th><th class="num">일수</th>
+            <th>사유</th><th>비고</th><th>등록일</th><th>관리</th>
+          </tr></thead>
+          <tbody id="historyTable"></tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ 내 정보 ============ -->
+  <section class="page" id="page-profile">
+    <div class="page-head">
+      <h1>내 정보</h1>
+      <p>이름과 총 연차일수를 입력하면 잔여 연차가 자동으로 계산됩니다.</p>
+    </div>
+
+    <div class="card" style="margin-bottom:20px">
+      <div class="card-head"><h2>제목 설정</h2></div>
+      <div class="card-pad">
+        <div class="field">
+          <label>프로그램 제목</label>
+          <input id="titleInput" placeholder="예) 홍길동의 연차 관리">
+          <span class="hint">상단 제목과 브라우저 탭 이름에 표시됩니다.</span>
+        </div>
+        <div class="form-actions">
+          <button class="btn btn-primary" onclick="saveTitle()">제목 저장</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="card" style="margin-bottom:20px">
+      <div class="card-head"><h2>기본 정보</h2></div>
+      <div class="card-pad">
+        <div class="form-grid">
+          <div class="field"><label>이름<span class="req">*</span></label><input id="pfName" placeholder="예) 홍길동"></div>
+          <div class="field"><label>부서</label><input id="pfDept" placeholder="예) 경영지원팀"></div>
+          <div class="field"><label>직급</label><input id="pfPos" placeholder="예) 대리"></div>
+          <div class="field"><label>입사일</label><input id="pfJoin" type="date"></div>
+          <div class="field"><label>총 연차일수<span class="req">*</span></label><input id="pfTotal" type="number" min="0" step="0.5" placeholder="예) 15"></div>
+        </div>
+        <div class="form-actions">
+          <button class="btn btn-primary" onclick="saveProfileForm()">저장</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="card" style="margin-bottom:20px">
+      <div class="card-head"><h2>클라우드 동기화 (외부·다른 기기 접속)</h2></div>
+      <div class="card-pad">
+        <p class="hint" style="margin-bottom:14px;line-height:1.7">
+          Supabase 프로젝트를 연결하면 데이터가 클라우드에 저장되어, 외부나 다른 기기에서도 같은 URL·키·동기화 ID로 접속해 이어서 사용할 수 있습니다.
+          비워두면 이 브라우저에만 저장됩니다.
+        </p>
+        <div class="form-grid">
+          <div class="field"><label>Supabase URL</label><input id="syncUrl" placeholder="https://xxxx.supabase.co"></div>
+          <div class="field"><label>API 키 (publishable)</label><input id="syncKey" placeholder="sb_publishable_... 또는 eyJ..."></div>
+          <div class="field"><label>동기화 ID</label><input id="syncId" placeholder="예) hong-2026 (본인만 아는 값)"></div>
+        </div>
+        <div class="form-actions">
+          <button class="btn btn-primary" onclick="saveSyncCfg()">연결 저장</button>
+          <button class="btn btn-ghost" onclick="syncPull(true)">지금 불러오기</button>
+          <button class="btn btn-ghost" onclick="syncPush()">지금 저장</button>
+        </div>
+        <div id="syncStatus" style="margin-top:10px;font-size:12.5px;font-weight:600;color:var(--muted)">연결되지 않음</div>
+        <details style="margin-top:14px">
+          <summary style="cursor:pointer;font-size:12.5px;color:var(--navy);font-weight:700">설정 방법 보기</summary>
+          <ol style="margin:12px 0 0 18px;font-size:12.5px;color:#59616e;line-height:1.9">
+            <li>supabase.com 에서 무료 프로젝트를 생성합니다.</li>
+            <li>SQL Editor에서 아래를 실행해 테이블을 만듭니다.
+              <pre style="background:#f4f6f9;border:1px solid var(--line);border-radius:6px;padding:9px 11px;margin-top:6px;font-size:11.5px;line-height:1.5;overflow-x:auto;white-space:pre-wrap">create table if not exists public.leave_sync (
+  id text primary key,
+  data jsonb,
+  updated_at timestamptz default now()
+);
+-- 새 프로젝트는 테이블을 API에 자동 노출하지 않으므로 권한을 직접 부여
+grant select, insert, update, delete on table public.leave_sync to anon;
+-- RLS를 켜고 익명(anon) 접근을 허용하는 정책 추가 (동기화 ID를 키처럼 사용)
+alter table public.leave_sync enable row level security;
+create policy "leave_sync_anon_all" on public.leave_sync
+  for all to anon using (true) with check (true);</pre>
+            </li>
+            <li>Project Settings → API Keys 에서 <b>Project URL</b>과 <b>Publishable key</b>(sb_publishable_…, 예전 프로젝트는 anon key)를 복사해 위 칸에 붙여넣습니다.</li>
+            <li>동기화 ID에 본인만 아는 값을 입력하고 [연결 저장]을 누릅니다.</li>
+            <li>다른 기기에서도 같은 URL·키·동기화 ID를 입력하면 데이터가 이어집니다.</li>
+          </ol>
+          <p style="margin:10px 0 0;font-size:11.5px;color:var(--red);line-height:1.6">※ 이 방식은 anon 키가 화면에 포함되므로 강력한 보안이 아닙니다. 동기화 ID는 추측하기 어려운 값으로 설정하세요. 민감한 조직 데이터에는 서버 측 인증(RLS 등)이 필요합니다.</p>
+        </details>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-head"><h2>데이터 관리</h2></div>
+      <div class="card-pad">
+        <div class="data-grid">
+          <div class="data-item">
+            <h3>휴가 내역 CSV</h3>
+            <p>휴가 사용 내역을 CSV 파일로 내려받습니다.</p>
+            <button class="btn btn-ghost" onclick="downloadVacCSV()">CSV 다운로드</button>
+          </div>
+          <div class="data-item">
+            <h3>전체 백업 (JSON)</h3>
+            <p>내 정보와 휴가 내역 전체를 JSON 파일로 백업합니다.</p>
+            <button class="btn btn-primary" onclick="backupJSON()">백업 다운로드</button>
+          </div>
+          <div class="data-item">
+            <h3>백업 불러오기</h3>
+            <p>JSON 백업 파일을 불러와 현재 데이터를 덮어씁니다.</p>
+            <input type="file" id="restoreFile" accept="application/json,.json" style="display:none" onchange="restoreJSON(event)">
+            <button class="btn btn-ghost" onclick="document.getElementById('restoreFile').click()">백업 파일 선택</button>
+          </div>
+          <div class="data-item danger-zone">
+            <h3 style="color:var(--red)">전체 초기화</h3>
+            <p>내 정보와 모든 휴가 내역을 삭제합니다. 되돌릴 수 없습니다.</p>
+            <button class="btn btn-danger" onclick="askReset()">전체 초기화</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<div class="toast-wrap" id="toastWrap"></div>
+<div class="modal-back" id="modalBack">
+  <div class="modal">
+    <div class="modal-body">
+      <h3 id="modalTitle"></h3>
+      <p id="modalMsg"></p>
+      <div class="confirm-input" id="modalInputWrap" style="display:none">
+        <input id="modalInput" placeholder="확인 문구를 입력하세요">
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-ghost" onclick="closeModal()">취소</button>
+      <button class="btn btn-danger" id="modalOk">확인</button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ============================================================
+   내 연차·반차 관리  —  Green IT Korea
+   HTML/CSS/JS + LocalStorage · 개인 단일 사용 (로그인 없음)
+   ============================================================ */
+const KEY_PROFILE = 'leave_profile';
+const KEY_VAC = 'vacations';
+const KEY_TITLE = 'leave_title';
+const KEY_SYNC = 'leave_sync_cfg';
+
+let profile = null;   // {name, department, position, joinDate, totalLeave}
+let vacations = [];   // [{id, vacationDate, vacationType, usedDays, reason, memo, createdAt}]
+let editVacId = null;
+let calYear, calMonth; // 캘린더가 보고 있는 연/월(0-based)
+let appTitle = '내 연차·반차 관리';
+let syncCfg = null;    // {url, key, id}
+let applyingRemote = false;
+let pushTimer = null;
+
+/* ---------- 저장 / 불러오기 ---------- */
+function loadData(){
+  try{ profile = JSON.parse(localStorage.getItem(KEY_PROFILE)); }catch(e){ profile = null; }
+  try{ const v = JSON.parse(localStorage.getItem(KEY_VAC)); vacations = Array.isArray(v)?v:[]; }catch(e){ vacations = []; }
+}
+function saveProfile(){ localStorage.setItem(KEY_PROFILE, JSON.stringify(profile)); syncPushDebounced(); }
+function saveVac(){ localStorage.setItem(KEY_VAC, JSON.stringify(vacations)); syncPushDebounced(); }
+function hasProfile(){ return !!(profile && profile.name); }
+
+/* ---------- 유틸 ---------- */
+function uid(p){ return p+'_'+Date.now().toString(36)+Math.random().toString(36).slice(2,6); }
+function nowISO(){ return new Date().toISOString().slice(0,19); }
+function esc(s){ return (s==null?'':String(s)).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+function fmtDate(d){ return d || '-'; }
+function fmtNum(n){ return Number.isInteger(n)?String(n):n.toFixed(1); }
+function typeTag(t){ const m={'연차':'t-full','오전 반차':'t-am','오후 반차':'t-pm'}; return `<span class="type-tag ${m[t]||'t-full'}">${esc(t)}</span>`; }
+
+/* ---------- 계산 ---------- */
+function totalLeave(){ return profile ? (Number(profile.totalLeave)||0) : 0; }
+function usedDays(){ return vacations.reduce((s,v)=>s+(Number(v.usedDays)||0),0); }
+function remainDays(){ return totalLeave() - usedDays(); }
+function usageRate(){ const t=totalLeave(); return t===0?0:usedDays()/t*100; }
+function stateOf(r){
+  if(r<0) return {label:'초과 사용', color:'var(--red)'};
+  if(r===0) return {label:'소진', color:'var(--gray)'};
+  if(r<5) return {label:'주의', color:'var(--amber)'};
+  return {label:'정상', color:'var(--green-dark)'};
+}
+
+/* ---------- 탭 전환 ---------- */
+document.getElementById('tabBar').addEventListener('click', e=>{
+  const t = e.target.closest('.tab'); if(!t) return;
+  goTab(t.dataset.page);
+});
+function goTab(page){
+  document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));
+  document.querySelectorAll('.page').forEach(x=>x.classList.remove('active'));
+  document.querySelector(`.tab[data-page="${page}"]`).classList.add('active');
+  document.getElementById('page-'+page).classList.add('active');
+  renderAll();
+}
+
+/* ============================================================
+   내 정보
+   ============================================================ */
+function saveProfileForm(){
+  const name = document.getElementById('pfName').value.trim();
+  const dept = document.getElementById('pfDept').value.trim();
+  const pos  = document.getElementById('pfPos').value.trim();
+  const join = document.getElementById('pfJoin').value;
+  const totalRaw = document.getElementById('pfTotal').value.trim();
+
+  if(!name){ toast('이름을 입력해 주세요.','warn'); return; }
+  if(totalRaw===''){ toast('총 연차일수를 입력해 주세요.','warn'); return; }
+  const total = Number(totalRaw);
+  if(isNaN(total)){ toast('총 연차일수는 숫자만 입력할 수 있습니다.','warn'); return; }
+  if(total < 0){ toast('총 연차일수는 0 이상이어야 합니다.','warn'); return; }
+
+  profile = {name, department:dept, position:pos, joinDate:join, totalLeave:total};
+  saveProfile();
+  toast('내 정보가 저장되었습니다.','ok');
+  renderAll();
+}
+function fillProfileForm(){
+  document.getElementById('pfName').value  = profile?.name || '';
+  document.getElementById('pfDept').value  = profile?.department || '';
+  document.getElementById('pfPos').value   = profile?.position || '';
+  document.getElementById('pfJoin').value  = profile?.joinDate || '';
+  document.getElementById('pfTotal').value = (profile && profile.totalLeave!=null) ? profile.totalLeave : '';
+}
+
+/* ============================================================
+   휴가 등록 / 수정 / 삭제
+   ============================================================ */
+function showUsedDays(){
+  document.getElementById('vacDays').value = (document.getElementById('vacType').value==='연차') ? '1' : '0.5';
+}
+function showBalance(){
+  document.getElementById('balTotal').textContent = fmtNum(totalLeave());
+  document.getElementById('balUsed').textContent  = fmtNum(usedDays());
+  const r = remainDays(), el = document.getElementById('balRemain');
+  el.textContent = fmtNum(r);
+  el.className = 'i-val ' + (r<0?'r':r===0?'':'g');
+}
+
+/* 중복 검사: 같은 날 연차는 어떤 항목과도 충돌, 반차는 같은 유형만 충돌 (오전+오후 허용) */
+function hasConflict(date, type, excludeId){
+  const day = vacations.filter(v=>v.vacationDate===date && v.id!==excludeId);
+  if(day.length===0) return false;
+  if(day.some(v=>v.vacationType==='연차')) return true;
+  if(type==='연차') return true;
+  return day.some(v=>v.vacationType===type);
+}
+
+function saveVacation(){
+  if(!hasProfile()){
+    toast('먼저 내 정보를 입력해 주세요.','warn');
+    goTab('profile');
+    return;
+  }
+  const date  = document.getElementById('vacDate').value;
+  const type  = document.getElementById('vacType').value;
+  const reason= document.getElementById('vacReason').value.trim();
+  const memo  = document.getElementById('vacMemo').value.trim();
+
+  if(!date){ toast('휴가일을 입력해 주세요.','warn'); return; }
+  if(!type){ toast('휴가 유형을 선택해 주세요.','warn'); return; }
+  if(hasConflict(date, type, editVacId)){ toast('이미 등록된 휴가 내역입니다.','err'); return; }
+
+  const days = (type==='연차') ? 1 : 0.5;
+  const usedExcl = vacations.filter(v=>v.id!==editVacId).reduce((s,v)=>s+(Number(v.usedDays)||0),0);
+  if(totalLeave() - usedExcl - days < 0){ toast('잔여 연차가 부족합니다.','err'); return; }
+
+  if(editVacId){
+    const v = vacations.find(x=>x.id===editVacId);
+    Object.assign(v, {vacationDate:date, vacationType:type, usedDays:days, reason, memo});
+    toast('휴가 수정 완료','ok');
+  }else{
+    vacations.push({id:uid('vac'), vacationDate:date, vacationType:type, usedDays:days, reason, memo, createdAt:nowISO()});
+    toast('휴가 등록 완료','ok');
+  }
+  saveVac();
+  resetVacForm();
+  renderAll();
+}
+
+function editVacation(id){
+  const v = vacations.find(x=>x.id===id); if(!v) return;
+  editVacId = id;
+  goTab('register');
+  document.getElementById('vacDate').value = v.vacationDate;
+  document.getElementById('vacType').value = v.vacationType;
+  showUsedDays();
+  document.getElementById('vacReason').value = v.reason || '';
+  document.getElementById('vacMemo').value = v.memo || '';
+  document.getElementById('vacFormTitle').textContent = '휴가 수정';
+  document.getElementById('vacSaveBtn').textContent = '수정 저장';
+  window.scrollTo({top:0, behavior:'smooth'});
+}
+
+function resetVacForm(){
+  editVacId = null;
+  document.getElementById('vacDate').value = '';
+  document.getElementById('vacType').value = '연차';
+  document.getElementById('vacDays').value = '1';
+  document.getElementById('vacReason').value = '';
+  document.getElementById('vacMemo').value = '';
+  document.getElementById('vacFormTitle').textContent = '휴가 등록';
+  document.getElementById('vacSaveBtn').textContent = '휴가 등록';
+}
+
+function deleteVacation(id){
+  const v = vacations.find(x=>x.id===id); if(!v) return;
+  confirmModal('휴가 삭제', `${v.vacationDate} · ${v.vacationType} 내역을 삭제하시겠습니까?`, ()=>{
+    vacations = vacations.filter(x=>x.id!==id);
+    saveVac();
+    if(editVacId===id) resetVacForm();
+    toast('휴가 삭제 완료','ok');
+    renderAll();
+  });
+}
+
+/* ============================================================
+   내 연차 (요약)
+   ============================================================ */
+function renderSummary(){
+  const box = document.getElementById('summaryContent');
+  if(!hasProfile()){
+    box.innerHTML = `
+      <div class="setup">
+        <div class="ico">🌿</div>
+        <h2>시작하기 전에 내 정보를 입력하세요</h2>
+        <p>이름과 총 연차일수를 입력하면 잔여 연차가 자동으로 계산됩니다.</p>
+        <button class="btn btn-primary" onclick="goTab('profile')">내 정보 입력하기</button>
+      </div>`;
+    return;
+  }
+  const total = totalLeave(), used = usedDays(), remain = remainDays(), rate = usageRate();
+  const s = stateOf(remain);
+  const fullCnt = vacations.filter(v=>v.vacationType==='연차').length;
+  const halfCnt = vacations.filter(v=>v.vacationType!=='연차').length;
+
+  const recent = vacations.slice().sort((a,b)=>(b.vacationDate||'').localeCompare(a.vacationDate||'')).slice(0,8);
+  const recentRows = recent.length
+    ? recent.map(v=>`<tr>
+        <td>${fmtDate(v.vacationDate)}</td>
+        <td>${typeTag(v.vacationType)}</td>
+        <td class="num">${fmtNum(Number(v.usedDays)||0)}</td>
+        <td>${esc(v.reason)||'-'}</td>
+        <td>${esc(v.memo)||'-'}</td>
+      </tr>`).join('')
+    : `<tr><td colspan="5"><div class="empty"><div class="ico">🗓️</div><p>휴가 사용 내역이 없습니다.</p><small>휴가 등록에서 내역을 추가해 보세요.</small></div></td></tr>`;
+
+  box.innerHTML = `
+    <div class="hero">
+      <div class="who">
+        <div class="nm">${esc(profile.name)}</div>
+        <div class="sub">${esc(profile.department||'')}${profile.position?' · '+esc(profile.position):''}${profile.joinDate?' · 입사 '+profile.joinDate:''}</div>
+      </div>
+      <div class="big">
+        <div class="n">${fmtNum(remain)}</div>
+        <div class="l">잔여 연차 (일) · ${s.label}</div>
+      </div>
+    </div>
+
+    <div class="stats">
+      <div class="stat"><div class="label">총 연차</div><div class="val">${fmtNum(total)}<small>일</small></div></div>
+      <div class="stat a"><div class="label">사용 연차</div><div class="val">${fmtNum(used)}<small>일</small></div></div>
+      <div class="stat ${remain<0?'r':'g'}"><div class="label">잔여 연차</div><div class="val">${fmtNum(remain)}<small>일</small></div></div>
+      <div class="stat"><div class="label">사용률</div><div class="val">${rate.toFixed(0)}<small>%</small></div></div>
+    </div>
+
+    <div class="card">
+      <div class="card-head">
+        <h2>최근 휴가 내역</h2>
+        <span style="font-size:12.5px;color:var(--muted)">연차 ${fullCnt}일 · 반차 ${halfCnt}회</span>
+      </div>
+      <div class="table-scroll">
+        <table>
+          <thead><tr><th>휴가일</th><th>유형</th><th class="num">일수</th><th>사유</th><th>비고</th></tr></thead>
+          <tbody>${recentRows}</tbody>
+        </table>
+      </div>
+    </div>`;
+}
+
+/* ============================================================
+   휴가 내역
+   ============================================================ */
+function renderHistory(){
+  const type = document.getElementById('hType').value;
+  const from = document.getElementById('hFrom').value;
+  const to   = document.getElementById('hTo').value;
+  let list = vacations.slice().sort((a,b)=>(b.vacationDate||'').localeCompare(a.vacationDate||''));
+  list = list.filter(v=>{
+    if(type && v.vacationType!==type) return false;
+    if(from && (v.vacationDate||'')<from) return false;
+    if(to && (v.vacationDate||'')>to) return false;
+    return true;
+  });
+  const tb = document.getElementById('historyTable');
+  if(list.length===0){
+    tb.innerHTML = `<tr><td colspan="8"><div class="empty"><div class="ico">🗓️</div><p>휴가 내역이 없습니다.</p><small>휴가 등록에서 내역을 추가해 보세요.</small></div></td></tr>`;
+    return;
+  }
+  tb.innerHTML = list.map((v,i)=>`<tr>
+    <td class="num">${i+1}</td>
+    <td>${fmtDate(v.vacationDate)}</td>
+    <td>${typeTag(v.vacationType)}</td>
+    <td class="num">${fmtNum(Number(v.usedDays)||0)}</td>
+    <td>${esc(v.reason)||'-'}</td>
+    <td>${esc(v.memo)||'-'}</td>
+    <td style="color:var(--muted);font-size:12.5px">${(v.createdAt||'').slice(0,10)||'-'}</td>
+    <td>
+      <button class="btn-icon" onclick="editVacation('${v.id}')">수정</button>
+      <button class="btn-icon del" onclick="deleteVacation('${v.id}')">삭제</button>
+    </td>
+  </tr>`).join('');
+}
+function resetHistoryFilter(){
+  document.getElementById('hType').value='';
+  document.getElementById('hFrom').value='';
+  document.getElementById('hTo').value='';
+  renderHistory();
+}
+
+/* ============================================================
+   CSV / 백업 / 복원 / 초기화
+   ============================================================ */
+function downloadCSV(filename, rows){
+  const csv = rows.map(r=>r.map(c=>{
+    const s=(c==null?'':String(c));
+    return /[",\n]/.test(s) ? '"'+s.replace(/"/g,'""')+'"' : s;
+  }).join(',')).join('\r\n');
+  const blob = new Blob(['\uFEFF'+csv], {type:'text/csv;charset=utf-8;'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a'); a.href=url; a.download=filename; a.click();
+  URL.revokeObjectURL(url);
+}
+function downloadVacCSV(){
+  if(vacations.length===0){ toast('내려받을 휴가 데이터가 없습니다.','warn'); return; }
+  const rows = [['휴가일','유형','사용일수','사유','비고','등록일']];
+  vacations.slice().sort((a,b)=>(b.vacationDate||'').localeCompare(a.vacationDate||''))
+    .forEach(v=> rows.push([v.vacationDate, v.vacationType, fmtNum(Number(v.usedDays)||0), v.reason||'', v.memo||'', (v.createdAt||'').slice(0,10)]));
+  const who = hasProfile() ? '_'+profile.name : '';
+  downloadCSV(`휴가내역${who}_${new Date().toISOString().slice(0,10)}.csv`, rows);
+  toast('CSV 다운로드 완료','ok');
+}
+function backupJSON(){
+  const data = {profile, vacations, exportedAt:nowISO(), app:'GIT-MyLeave'};
+  const blob = new Blob([JSON.stringify(data,null,2)], {type:'application/json'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a'); a.href=url; a.download=`내연차_백업_${new Date().toISOString().slice(0,10)}.json`; a.click();
+  URL.revokeObjectURL(url);
+  toast('백업 다운로드 완료','ok');
+}
+function restoreJSON(ev){
+  const file = ev.target.files[0]; ev.target.value='';
+  if(!file) return;
+  if(!file.name.toLowerCase().endsWith('.json')){ toast('JSON 파일만 복원할 수 있습니다.','err'); return; }
+  const reader = new FileReader();
+  reader.onload = e=>{
+    let data;
+    try{ data = JSON.parse(e.target.result); }catch(err){ toast('파일을 읽을 수 없습니다. JSON 형식을 확인해 주세요.','err'); return; }
+    if(!Array.isArray(data.vacations)){ toast('백업 파일 구조가 올바르지 않습니다.','err'); return; }
+    confirmModal('백업 복원', `기존 데이터를 백업 파일로 덮어씁니다. (휴가 ${data.vacations.length}건) 계속하시겠습니까?`, ()=>{
+      profile = data.profile || null;
+      vacations = data.vacations;
+      saveProfile(); saveVac();
+      toast('데이터 복원 완료','ok');
+      renderAll();
+    });
+  };
+  reader.readAsText(file);
+}
+function askReset(){
+  confirmModal('전체 초기화', '내 정보와 모든 휴가 내역이 영구 삭제됩니다. 계속하려면 아래에 "초기화"를 입력하세요.', ()=>{
+    if(document.getElementById('modalInput').value.trim() !== '초기화'){ toast('확인 문구가 일치하지 않습니다.','err'); return false; }
+    profile = null; vacations = [];
+    localStorage.removeItem(KEY_PROFILE); localStorage.removeItem(KEY_VAC);
+    resetVacForm();
+    syncPush();
+    toast('데이터가 초기화되었습니다.','ok');
+    renderAll();
+  }, true);
+}
+
+/* ============================================================
+   토스트 / 모달
+   ============================================================ */
+function toast(msg, type){
+  const wrap = document.getElementById('toastWrap');
+  const el = document.createElement('div');
+  el.className = 'toast '+(type||'');
+  const icon = type==='ok'?'✓':type==='err'?'✕':type==='warn'?'!':'ℹ';
+  el.innerHTML = `<span>${icon}</span><span>${esc(msg)}</span>`;
+  wrap.appendChild(el);
+  setTimeout(()=>{ el.style.opacity='0'; el.style.transform='translateY(10px)'; el.style.transition='.3s'; setTimeout(()=>el.remove(),300); }, 2400);
+}
+let modalCb = null;
+function confirmModal(title, msg, cb, needInput){
+  document.getElementById('modalTitle').textContent = title;
+  document.getElementById('modalMsg').textContent = msg;
+  document.getElementById('modalInputWrap').style.display = needInput?'block':'none';
+  document.getElementById('modalInput').value = '';
+  modalCb = cb;
+  document.getElementById('modalBack').classList.add('show');
+  if(needInput) setTimeout(()=>document.getElementById('modalInput').focus(),100);
+}
+function closeModal(){ document.getElementById('modalBack').classList.remove('show'); modalCb=null; }
+document.getElementById('modalOk').addEventListener('click', ()=>{
+  if(modalCb){ if(modalCb()===false) return; }
+  closeModal();
+});
+document.getElementById('modalBack').addEventListener('click', e=>{ if(e.target.id==='modalBack') closeModal(); });
+
+/* ============================================================
+   캘린더
+   ============================================================ */
+function pad2(n){ return String(n).padStart(2,'0'); }
+function ymd(y,m,d){ return `${y}-${pad2(m+1)}-${pad2(d)}`; }
+function typeClass(t){ return {'연차':'t-full','오전 반차':'t-am','오후 반차':'t-pm'}[t] || 't-full'; }
+function typeShort(t){ return t==='연차' ? '연차' : t==='오전 반차' ? '오전' : '오후'; }
+function calInit(){ const t=new Date(); calYear=t.getFullYear(); calMonth=t.getMonth(); }
+function calPrev(){ if(--calMonth<0){ calMonth=11; calYear--; } renderCalendar(); }
+function calNext(){ if(++calMonth>11){ calMonth=0; calYear++; } renderCalendar(); }
+function calToday(){ calInit(); renderCalendar(); }
+
+function renderCalendar(){
+  if(calYear==null) calInit();
+  document.getElementById('calTitle').textContent = `${calYear}년 ${calMonth+1}월`;
+  const dows = ['일','월','화','수','목','금','토'];
+  document.getElementById('calDow').innerHTML =
+    dows.map((d,i)=>`<div class="cal-dow ${i===0?'sun':i===6?'sat':''}">${d}</div>`).join('');
+
+  const byDate = {};
+  vacations.forEach(v=>{ (byDate[v.vacationDate] = byDate[v.vacationDate] || []).push(v); });
+
+  const firstDow = new Date(calYear, calMonth, 1).getDay();     // 이 달 1일의 요일
+  const dim = new Date(calYear, calMonth+1, 0).getDate();       // 이 달 일수
+  const prevDim = new Date(calYear, calMonth, 0).getDate();     // 이전 달 일수
+  const today = new Date();
+  const todayStr = ymd(today.getFullYear(), today.getMonth(), today.getDate());
+
+  let cells = '', monthUsed = 0;
+  for(let i=0;i<42;i++){
+    let y=calYear, m=calMonth, d, other=false;
+    if(i < firstDow){ d = prevDim - firstDow + 1 + i; m=calMonth-1; other=true; if(m<0){m=11;y--;} }
+    else if(i >= firstDow+dim){ d = i - firstDow - dim + 1; m=calMonth+1; other=true; if(m>11){m=0;y++;} }
+    else { d = i - firstDow + 1; }
+
+    const dateStr = ymd(y,m,d);
+    const dow = i % 7;
+    const list = byDate[dateStr] || [];
+    if(!other) list.forEach(v=>monthUsed += Number(v.usedDays)||0);
+
+    const chips = list.map(v=>`<div class="cal-chip ${typeClass(v.vacationType)}">${typeShort(v.vacationType)}</div>`).join('');
+    const cls = ['cal-cell'];
+    if(other){ cls.push('other'); }
+    else { if(dow===0) cls.push('sun'); if(dow===6) cls.push('sat'); if(dateStr===todayStr) cls.push('today'); }
+    const click = other ? '' : `onclick="pickDay('${dateStr}')"`;
+    cells += `<div class="${cls.join(' ')}" ${click}><div class="cal-daynum">${d}</div>${chips}</div>`;
+  }
+  document.getElementById('calGrid').innerHTML = cells;
+  document.getElementById('calMonthUsed').textContent = monthUsed>0 ? `이번 달 사용 ${fmtNum(monthUsed)}일` : '';
+}
+
+/* 날짜 클릭 → 해당 날짜로 휴가 등록 화면 열기 */
+function pickDay(dateStr){
+  if(!hasProfile()){ toast('먼저 내 정보를 입력해 주세요.','warn'); goTab('profile'); return; }
+  resetVacForm();
+  goTab('register');
+  document.getElementById('vacDate').value = dateStr;
+}
+
+/* ============================================================
+   제목 편집
+   ============================================================ */
+function loadMeta(){
+  const t = localStorage.getItem(KEY_TITLE); if(t) appTitle = t;
+  try{ syncCfg = JSON.parse(localStorage.getItem(KEY_SYNC)); }catch(e){ syncCfg = null; }
+}
+function applyTitle(){
+  const h = document.getElementById('appTitle'); if(h) h.textContent = appTitle;
+  document.title = appTitle;
+  const inp = document.getElementById('titleInput'); if(inp) inp.value = appTitle;
+}
+function saveTitle(){
+  const v = document.getElementById('titleInput').value.trim();
+  appTitle = v || '내 연차·반차 관리';
+  localStorage.setItem(KEY_TITLE, appTitle);
+  applyTitle();
+  toast('제목이 저장되었습니다.','ok');
+  syncPushDebounced();
+}
+
+/* ============================================================
+   클라우드 동기화 (Supabase REST · 선택 기능)
+   설정하지 않으면 이 브라우저(LocalStorage)에만 저장됩니다.
+   ============================================================ */
+function syncEnabled(){ return !!(syncCfg && syncCfg.url && syncCfg.key && syncCfg.id); }
+function syncHeaders(){ return {'apikey':syncCfg.key, 'Authorization':'Bearer '+syncCfg.key, 'Content-Type':'application/json'}; }
+function updateSyncStatus(msg, kind){
+  const el = document.getElementById('syncStatus'); if(!el) return;
+  el.textContent = msg;
+  el.style.color = kind==='err' ? 'var(--red)' : kind==='on' ? 'var(--green-dark)' : 'var(--muted)';
+}
+function fillSyncForm(){
+  document.getElementById('syncUrl').value = syncCfg?.url || '';
+  document.getElementById('syncKey').value = syncCfg?.key || '';
+  document.getElementById('syncId').value  = syncCfg?.id  || '';
+  updateSyncStatus(syncEnabled() ? '설정됨 · 저장 시 자동으로 동기화됩니다.' : '연결되지 않음 (이 브라우저에만 저장)', syncEnabled()?'on':'off');
+}
+function saveSyncCfg(){
+  const url = document.getElementById('syncUrl').value.trim().replace(/\/+$/,'');
+  const key = document.getElementById('syncKey').value.trim();
+  const id  = document.getElementById('syncId').value.trim();
+  if(!url || !key || !id){
+    syncCfg = null; localStorage.removeItem(KEY_SYNC);
+    updateSyncStatus('연결 해제됨 (이 브라우저에만 저장)', 'off');
+    toast('클라우드 동기화를 해제했습니다.','ok');
+    return;
+  }
+  syncCfg = {url, key, id}; localStorage.setItem(KEY_SYNC, JSON.stringify(syncCfg));
+  toast('동기화 설정을 저장했습니다. 연결을 확인합니다…','ok');
+  syncPull(true);
+}
+function syncPushDebounced(){
+  if(!syncEnabled() || applyingRemote) return;
+  clearTimeout(pushTimer);
+  pushTimer = setTimeout(syncPush, 500);
+}
+async function syncPull(showToast){
+  if(!syncEnabled()){ if(showToast) toast('먼저 동기화 설정을 저장해 주세요.','warn'); return; }
+  updateSyncStatus('불러오는 중…','off');
+  try{
+    const res = await fetch(`${syncCfg.url}/rest/v1/leave_sync?id=eq.${encodeURIComponent(syncCfg.id)}&select=data`, {headers:syncHeaders()});
+    if(!res.ok){ const t = await res.text().catch(()=>''); throw new Error('HTTP '+res.status+(t?' · '+t.slice(0,180):'')); }
+    const arr = await res.json();
+    if(arr && arr.length && arr[0].data){
+      const d = arr[0].data;
+      applyingRemote = true;
+      if(d.title){ appTitle = d.title; localStorage.setItem(KEY_TITLE, appTitle); }
+      profile = d.profile || null; localStorage.setItem(KEY_PROFILE, JSON.stringify(profile));
+      vacations = Array.isArray(d.vacations) ? d.vacations : []; localStorage.setItem(KEY_VAC, JSON.stringify(vacations));
+      applyingRemote = false;
+      applyTitle(); renderAll();
+      updateSyncStatus('클라우드와 동기화됨 · '+new Date().toLocaleTimeString('ko-KR'), 'on');
+      if(showToast) toast('클라우드에서 불러왔습니다.','ok');
+    }else{
+      updateSyncStatus('연결됨 · 현재 데이터를 업로드합니다…', 'on');
+      await syncPush();
+      if(showToast) toast('클라우드에 현재 데이터를 저장했습니다.','ok');
+    }
+  }catch(e){
+    updateSyncStatus('연결 오류: '+e.message, 'err');
+    if(showToast) toast('클라우드 연결에 실패했습니다. 설정을 확인해 주세요.','err');
+  }
+}
+async function syncPush(){
+  if(!syncEnabled()) return;
+  try{
+    const body = JSON.stringify({ id:syncCfg.id, data:{title:appTitle, profile, vacations}, updated_at:new Date().toISOString() });
+    const res = await fetch(`${syncCfg.url}/rest/v1/leave_sync?on_conflict=id`, {
+      method:'POST',
+      headers: Object.assign(syncHeaders(), {'Prefer':'resolution=merge-duplicates,return=minimal'}),
+      body
+    });
+    if(!res.ok){ const t = await res.text().catch(()=>''); throw new Error('HTTP '+res.status+(t?' · '+t.slice(0,180):'')); }
+    updateSyncStatus('클라우드와 동기화됨 · '+new Date().toLocaleTimeString('ko-KR'), 'on');
+  }catch(e){
+    updateSyncStatus('동기화 실패: '+e.message, 'err');
+    toast('클라우드 저장에 실패했습니다.','err');
+  }
+}
+
+/* ============================================================
+   전체 렌더 / 초기화
+   ============================================================ */
+function renderAll(){
+  fillProfileForm();
+  showBalance();
+  renderSummary();
+  renderCalendar();
+  renderHistory();
+}
+
+loadData();
+loadMeta();
+calInit();
+showUsedDays();
+applyTitle();
+fillSyncForm();
+renderAll();
+if(syncEnabled()) syncPull();
+if(!hasProfile()) goTab('profile');
+</script>
+</body>
+</html>
