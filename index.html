@@ -1,0 +1,2288 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LeaveUP</title>
+<link rel="preconnect" href="https://cdn.jsdelivr.net">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+<style>
+@import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css');
+
+:root{
+  --navy:#1B4886;--navy-dark:#143a6d;--green:#7FAD47;--green-dark:#6b9639;
+  --gray:#696A6C;--line:#e4e7ec;--bg:#f4f6f9;--card:#fff;--text:#1f2430;
+  --muted:#7b828f;--amber:#e0a020;--red:#d64545;
+  /* 캘린더 표기 색상 (범례에서 사용자가 변경) */
+  --c-full:#9ccc65;--ct-full:#2f5711;
+  --c-am:#81d4fa;--ct-am:#06425f;
+  --c-pm:#f8bbd0;--ct-pm:#7a1f47;
+  --c-att:#5c6bc0;--ct-att:#ffffff;
+  --c-hw:#ef8e3b;--ct-hw:#4a2a06;
+  --c-out:#26a69a;--ct-out:#ffffff;
+  --c-onsite:#ab47bc;--ct-onsite:#ffffff;
+  --c-trip:#8d6e63;--ct-trip:#ffffff;
+  --c-hol:#e53935;--ct-hol:#ffffff;
+  --shadow:0 1px 3px rgba(20,30,50,.06),0 1px 2px rgba(20,30,50,.04);
+  --shadow-lg:0 8px 30px rgba(20,30,50,.12);--radius:12px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{-webkit-text-size-adjust:100%}
+body{font-family:'Pretendard',-apple-system,BlinkMacSystemFont,system-ui,sans-serif;background:var(--bg);color:var(--text);line-height:1.5;-webkit-font-smoothing:antialiased;font-size:14px}
+button{font-family:inherit;cursor:pointer;border:none;background:none}
+input,select,textarea{font-family:inherit;font-size:14px}
+
+/* Header */
+.appbar{background:var(--navy);color:#fff;position:sticky;top:0;z-index:50;box-shadow:0 2px 12px rgba(27,72,134,.25)}
+.appbar-inner{max-width:1080px;margin:0 auto;padding:0 24px;height:60px;display:flex;align-items:center;gap:16px}
+.brand{display:flex;align-items:center;gap:10px;font-weight:700;font-size:17px;letter-spacing:-.3px}
+.brand .logo{width:32px;height:32px;border-radius:50%;background:var(--green);display:grid;place-items:center;color:#fff;font-size:18px;font-weight:800}
+.brand small{display:block;font-size:11px;font-weight:500;opacity:.75;letter-spacing:0}
+.appbar-right{margin-left:auto;display:flex;align-items:center;gap:12px}
+.save-dot{display:flex;align-items:center;gap:6px;font-size:12px;opacity:.85}
+.save-dot i{width:8px;height:8px;border-radius:50%;background:var(--green);display:inline-block;box-shadow:0 0 0 3px rgba(127,173,71,.3)}
+
+/* Tabs */
+.tabs{background:var(--card);border-bottom:1px solid var(--line);position:sticky;top:60px;z-index:40}
+.tabs-inner{max-width:1080px;margin:0 auto;padding:0 24px;display:flex;gap:2px;overflow-x:auto}
+.tab{padding:14px 18px;font-weight:600;color:var(--muted);font-size:14px;white-space:nowrap;border-bottom:2.5px solid transparent;transition:.15s}
+.tab:hover{color:var(--navy)}
+.tab.active{color:var(--navy);border-bottom-color:var(--navy)}
+
+/* Layout */
+.wrap{max-width:1080px;margin:0 auto;padding:24px}
+.page{display:none;animation:fade .25s ease}
+.page.active{display:block}
+@keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+.page-head{margin-bottom:20px}
+.page-head h1{font-size:22px;font-weight:700;letter-spacing:-.4px}
+.page-head p{color:var(--muted);font-size:13px;margin-top:2px}
+
+/* Cards */
+.card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow)}
+.card-pad{padding:20px}
+.card-head{padding:16px 20px;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;gap:12px}
+.card-head h2{font-size:15px;font-weight:700}
+
+/* Hero */
+.hero{background:linear-gradient(135deg,var(--navy) 0%,#2a5aa5 100%);color:#fff;border-radius:var(--radius);padding:24px 26px;margin-bottom:20px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:16px}
+.hero .who .nm{font-size:23px;font-weight:800;letter-spacing:-.4px}
+.hero .who .sub{font-size:12.5px;opacity:.85;margin-top:3px}
+.hero .big{text-align:right}
+.hero .big .n{font-size:42px;font-weight:800;line-height:1;font-variant-numeric:tabular-nums}
+.hero .big .l{font-size:12px;opacity:.85;margin-top:5px}
+
+/* Stats */
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:20px}
+.stat{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:16px 18px;box-shadow:var(--shadow);position:relative;overflow:hidden}
+.stat::before{content:"";position:absolute;left:0;top:0;bottom:0;width:4px;background:var(--navy)}
+.stat.g::before{background:var(--green)}
+.stat.a::before{background:var(--amber)}
+.stat.r::before{background:var(--red)}
+.stat .label{font-size:12px;color:var(--muted);font-weight:600}
+.stat .val{font-size:26px;font-weight:800;letter-spacing:-.5px;margin-top:4px;font-variant-numeric:tabular-nums}
+.stat .val small{font-size:14px;font-weight:600;color:var(--muted);margin-left:2px}
+
+/* Forms */
+.form-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px}
+.field{display:flex;flex-direction:column;gap:6px}
+.field label{font-size:12.5px;font-weight:600;color:#48505e}
+.field label .req{color:var(--red);margin-left:2px}
+.field input,.field select,.field textarea{border:1px solid var(--line);border-radius:8px;padding:9px 11px;background:#fff;color:var(--text);transition:.15s;width:100%}
+.field input:focus,.field select:focus,.field textarea:focus{outline:none;border-color:var(--navy);box-shadow:0 0 0 3px rgba(27,72,134,.1)}
+.field input[readonly]{background:#f4f6f9;color:var(--muted);font-weight:700}
+.hint{font-size:12px;color:var(--muted);margin-top:2px}
+.form-actions{display:flex;gap:8px;margin-top:16px;flex-wrap:wrap}
+
+/* Buttons */
+.btn{padding:9px 16px;border-radius:8px;font-weight:600;font-size:13.5px;display:inline-flex;align-items:center;gap:6px;transition:.15s;white-space:nowrap}
+.btn:active{transform:translateY(1px)}
+.btn-primary{background:var(--navy);color:#fff}
+.btn-primary:hover{background:var(--navy-dark)}
+.btn-green{background:var(--green);color:#fff}
+.btn-green:hover{background:var(--green-dark)}
+.btn-ghost{background:#fff;color:#48505e;border:1px solid var(--line)}
+.btn-ghost:hover{background:#f7f8fa;border-color:#cfd4dc}
+.btn-danger{background:#fff;color:var(--red);border:1px solid #f0cccc}
+.btn-danger:hover{background:#fdf3f3}
+.btn-sm{padding:5px 10px;font-size:12.5px;border-radius:6px}
+.btn-icon{padding:5px 9px;font-size:12.5px;border-radius:6px;background:#f2f4f7;color:#48505e;font-weight:600}
+.btn-icon:hover{background:#e6e9ee}
+.btn-icon.del:hover{background:#fdeaea;color:var(--red)}
+
+/* Balance panel */
+.balance{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:16px;background:#f8f9fb;border:1px solid var(--line);border-radius:10px;padding:14px 16px}
+.balance .i-label{font-size:11.5px;color:var(--muted);font-weight:600}
+.balance .i-val{font-size:20px;font-weight:800;margin-top:2px;font-variant-numeric:tabular-nums}
+.balance .i-val.g{color:var(--green-dark)}
+.balance .i-val.r{color:var(--red)}
+
+/* Filters */
+.filters{display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end}
+.filters .field{flex:1;min-width:130px}
+
+/* Tables */
+.table-scroll{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:13.5px}
+thead th{text-align:left;padding:11px 14px;background:#f8f9fb;color:#59616e;font-weight:700;font-size:12px;border-bottom:1px solid var(--line);white-space:nowrap;letter-spacing:.2px}
+tbody td{padding:11px 14px;border-bottom:1px solid #f0f2f5;vertical-align:middle;white-space:nowrap}
+tbody tr:last-child td{border-bottom:none}
+tbody tr:hover{background:#fafbfc}
+.num{font-variant-numeric:tabular-nums;text-align:right}
+
+/* Tags */
+.type-tag{padding:3px 8px;border-radius:6px;font-size:11.5px;font-weight:700}
+.t-full{background:#e8f3d9;color:#4a7d13}
+.t-am{background:#e1f4fd;color:#0277bd}
+.t-pm{background:#fce4ec;color:#c2185b}
+
+/* Empty / setup */
+.empty{padding:44px 20px;text-align:center;color:var(--muted)}
+.empty .ico{font-size:34px;opacity:.4;margin-bottom:8px}
+.empty p{font-size:14px}
+.empty small{font-size:12.5px;opacity:.8}
+.setup{background:var(--card);border:1px dashed #c7cdd6;border-radius:var(--radius);padding:40px 24px;text-align:center}
+.setup .ico{font-size:40px;margin-bottom:10px}
+.setup h2{font-size:18px;font-weight:700}
+.setup p{color:var(--muted);font-size:13.5px;margin:6px 0 18px}
+
+/* Data mgmt */
+.data-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:14px}
+.data-item{border:1px solid var(--line);border-radius:10px;padding:16px;background:#fff;display:flex;flex-direction:column;gap:10px}
+.data-item h3{font-size:14px;font-weight:700}
+.data-item p{font-size:12.5px;color:var(--muted);flex:1}
+.data-item.danger-zone{border-color:#f0cccc;background:#fdf7f7}
+
+/* Toast */
+.toast-wrap{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);z-index:200;display:flex;flex-direction:column;gap:8px;align-items:center}
+.toast{background:#1f2430;color:#fff;padding:11px 18px;border-radius:10px;font-size:13.5px;font-weight:600;box-shadow:var(--shadow-lg);display:flex;align-items:center;gap:8px;animation:toastIn .25s ease}
+.toast.ok{background:#1c7a4a}.toast.warn{background:#b5741a}.toast.err{background:#b53838}
+@keyframes toastIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+
+/* Modal */
+.modal-back{position:fixed;inset:0;background:rgba(20,26,38,.5);z-index:150;display:none;align-items:center;justify-content:center;padding:20px}
+.modal-back.show{display:flex}
+.modal{background:#fff;border-radius:14px;max-width:420px;width:100%;box-shadow:var(--shadow-lg);animation:toastIn .2s ease;overflow:hidden}
+.modal-body{padding:24px}
+.modal-body h3{font-size:17px;font-weight:700;margin-bottom:8px}
+.modal-body p{color:#5b6472;font-size:13.5px;line-height:1.6}
+.modal-body .confirm-input{margin-top:14px}
+.modal-body .confirm-input input{width:100%;border:1px solid var(--line);border-radius:8px;padding:9px 11px}
+.modal-foot{padding:14px 24px;background:#f8f9fb;display:flex;justify-content:flex-end;gap:8px}
+/* 확인(삭제) 모달은 휴가 수정 팝업보다 위에 표시 */
+#modalBack{z-index:160}
+/* 캘린더/상세의 클릭 가능한 이벤트 */
+.cal-chip.clickable{cursor:pointer}
+.cal-chip.clickable:hover{filter:brightness(.94);box-shadow:0 0 0 2px rgba(27,72,134,.25)}
+.day-row.clickable{cursor:pointer;padding:8px 10px;border:1px solid var(--line);border-radius:8px;transition:.12s;justify-content:space-between}
+.day-row.clickable:hover{border-color:var(--navy);background:#f5f8fd}
+.day-row .edit-hint{margin-left:auto;font-size:11.5px;font-weight:700;color:var(--navy);white-space:nowrap}
+
+/* Calendar */
+.cal-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:10px}
+.cal-nav{display:flex;align-items:center;gap:8px}
+.cal-title{font-size:17px;font-weight:800;min-width:120px;text-align:center;letter-spacing:-.3px}
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:6px}
+.cal-dow{text-align:center;font-size:12px;font-weight:700;color:var(--muted);padding:4px 0}
+.cal-dow.sun{color:var(--red)}
+.cal-dow.sat{color:var(--navy)}
+.cal-cell{min-height:84px;border:1px solid var(--line);border-radius:8px;padding:6px;background:#fff;cursor:pointer;transition:.12s;display:flex;flex-direction:column;gap:3px;overflow:hidden}
+.cal-cell:hover{border-color:var(--navy);box-shadow:0 0 0 3px rgba(27,72,134,.08)}
+.cal-cell.other{background:#fafbfc;cursor:default}
+.cal-cell.other:hover{border-color:var(--line);box-shadow:none}
+.cal-cell.today{border-color:var(--navy);background:#f2f6fc}
+.cal-daynum{font-size:12.5px;font-weight:700}
+.cal-cell.sun .cal-daynum{color:var(--red)}
+.cal-cell.sat .cal-daynum{color:var(--navy)}
+.cal-cell.other .cal-daynum{color:#c2c8d0}
+.cal-chip{font-size:12.5px;font-weight:700;padding:2px 6px;border-radius:4px;line-height:1.3;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.cal-chip.t-full{background:var(--c-full);color:var(--ct-full)}
+.cal-chip.t-am{background:var(--c-am);color:var(--ct-am)}
+.cal-chip.t-pm{background:var(--c-pm);color:var(--ct-pm)}
+.lg{display:inline-block;width:11px;height:11px;border-radius:3px;vertical-align:-1px;margin-right:5px}
+.lg.t-full{background:var(--c-full)}
+.lg.t-am{background:var(--c-am)}
+.lg.t-pm{background:var(--c-pm)}
+.lg.hol{background:var(--c-hol)}
+.lg.att{background:var(--c-att)}
+.lg.hw{background:var(--c-hw)}
+/* 범례 색상 선택 */
+.legend{display:flex;gap:10px 14px;flex-wrap:wrap;align-items:center;margin-top:16px;font-size:12px;color:var(--muted)}
+.lg-view{display:inline-flex;align-items:center;gap:5px;font-size:12.5px;color:var(--muted);font-weight:600}
+.lg-dot{display:inline-block;width:12px;height:12px;border-radius:3px;vertical-align:-1px;box-shadow:var(--shadow)}
+.lg-item{display:inline-flex;align-items:center;gap:5px;user-select:none;background:#f7f8fa;border:1px solid var(--line);border-radius:8px;padding:4px 7px}
+.lg-item.lg-off{opacity:.5}
+.lg-vis{width:15px;height:15px;cursor:pointer;accent-color:var(--navy)}
+.lg-edit{font-size:11.5px;color:#fff;font-weight:700;background:var(--navy);border-radius:6px;padding:4px 10px;cursor:pointer}
+.lg-edit:hover{background:var(--navy-dark)}
+.lg-swatch{-webkit-appearance:none;-moz-appearance:none;appearance:none;width:15px;height:15px;border:1px solid rgba(0,0,0,.12);border-radius:4px;padding:0;cursor:pointer;background:transparent;box-shadow:var(--shadow)}
+.lg-swatch::-webkit-color-swatch-wrapper{padding:0}
+.lg-swatch::-webkit-color-swatch{border:none;border-radius:3px}
+.lg-swatch::-moz-color-swatch{border:none;border-radius:3px}
+.lg-name{border:1px solid transparent;background:transparent;font-size:12px;font-weight:600;color:var(--text);width:84px;padding:2px 4px;border-radius:5px}
+.lg-name:hover{border-color:var(--line)}
+.lg-name:focus{outline:none;border-color:var(--navy);background:#fff}
+.lg-eye{font-size:11px;font-weight:700;color:var(--navy);background:#eef2f8;border-radius:5px;padding:2px 6px;cursor:pointer;white-space:nowrap}
+.lg-item.lg-off .lg-eye{color:var(--muted);background:#edeef1}
+.lg-reset{font-size:11.5px;color:var(--navy);font-weight:700;background:none;cursor:pointer;text-decoration:underline;margin-left:2px}
+.cal-chip.att{background:var(--c-att);color:var(--ct-att)}
+.cal-chip.hw{background:var(--c-hw);color:var(--ct-hw)}
+.cal-chip.out{background:var(--c-out);color:var(--ct-out)}
+.cal-chip.onsite{background:var(--c-onsite);color:var(--ct-onsite)}
+.cal-chip.trip{background:var(--c-trip);color:var(--ct-trip)}
+.cal-chip.wtime{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:11.5px;letter-spacing:-.3px}
+.day-row{display:flex;align-items:center;gap:8px;margin-bottom:6px}
+/* 공휴일 */
+.cal-cell.holiday .cal-daynum{color:var(--c-hol)}
+.cal-hol{font-size:11.5px;font-weight:700;color:var(--ct-hol);line-height:1.2;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;background:var(--c-hol);border-radius:4px;padding:1px 5px}
+.cal-hol.sub{color:var(--ct-hol);background:var(--c-hol)}
+
+@media(max-width:760px){.stats{grid-template-columns:1fr 1fr}}
+@media(max-width:640px){
+  .appbar-inner,.tabs-inner,.wrap{padding-left:14px;padding-right:14px}
+  .brand small{display:none}
+  .balance{grid-template-columns:1fr}
+  .cal-cell{min-height:58px;padding:4px;gap:2px}
+  .cal-chip{font-size:10px;padding:1px 4px}
+  .cal-hol{font-size:9.5px;padding:1px 4px}
+  .cal-chip.wtime{font-size:9px}
+  .cal-grid{gap:4px}
+}
+/* 로그인 오버레이 */
+.auth-back{position:fixed;inset:0;z-index:200;background:linear-gradient(135deg,#eef2f8,#f4f6f9);display:none;align-items:center;justify-content:center;padding:20px}
+.auth-back.show{display:flex}
+.auth-card{width:100%;max-width:360px;min-height:400px;background:var(--card);border:1px solid var(--line);border-radius:16px;box-shadow:var(--shadow-lg);padding:40px 24px 28px}
+.auth-brand{display:flex;align-items:center;justify-content:center;gap:8px;font-weight:800;font-size:18px;color:var(--navy);margin:0 0 26px}
+.auth-brand .logo{width:28px;height:28px;font-size:16px;border-radius:50%;background:var(--green);color:#fff;display:grid;place-items:center;font-weight:800}
+.auth-remember{margin:2px 0 12px;font-size:13px;color:#48505e}
+.auth-remember label{display:flex;align-items:center;gap:8px;cursor:pointer;user-select:none}
+.auth-remember input{width:16px;height:16px;accent-color:var(--navy);cursor:pointer}
+.auth-remember .auth-remember-hint{color:var(--muted);font-size:12px;font-weight:500}
+.auth-card h2{font-size:20px;margin:14px 0 18px;text-align:left}
+#authSubmit{justify-content:center}
+.auth-card .field{margin-bottom:12px}
+.auth-msg{min-height:16px;font-size:12.5px;font-weight:600;color:var(--red);margin:0 0 4px}
+.auth-msg.ok{color:var(--green-dark)}
+.auth-toggle{margin-top:8px;font-size:13px;color:var(--muted);text-align:center}
+.auth-toggle a{color:var(--navy);font-weight:700;text-decoration:underline;cursor:pointer;margin-left:6px}
+.auth-note{margin-top:16px;font-size:12px;color:var(--muted);line-height:1.6;background:#f7f8fa;border:1px solid var(--line);border-radius:8px;padding:10px 12px}
+</style>
+</head>
+<body>
+
+<header class="appbar">
+  <div class="appbar-inner">
+    <div class="brand">
+      <span class="logo">L</span>
+      <span><span id="appTitle">LeaveUP</span><small>My Leave · by khkim · <span id="relDate">rel. 2026-07-08</span></small></span>
+    </div>
+    <div class="appbar-right">
+      <span class="save-dot"><i></i> 자동 저장됨</span>
+    </div>
+  </div>
+</header>
+
+<nav class="tabs">
+  <div class="tabs-inner" id="tabBar">
+    <button class="tab active" data-page="summary">내 연차</button>
+    <button class="tab" data-page="calendar">캘린더</button>
+    <button class="tab" data-page="register">휴가 관리</button>
+    <button class="tab" data-page="holwork">출퇴근 관리</button>
+    <button class="tab" data-page="profile">내 정보</button>
+  </div>
+</nav>
+
+<div class="auth-back" id="authOverlay">
+  <div class="auth-card">
+    <div class="auth-brand"><span class="logo">L</span> <span id="authBrandName">LeaveUP</span></div>
+    <h2 id="authTitle" style="display:none">로그인</h2>
+    <div class="field" id="authEmailField"><label>이메일</label><input id="authEmail" type="email" autocomplete="username" placeholder="you@example.com"></div>
+    <div class="field" id="authPwField"><label>비밀번호</label><input id="authPw" type="password" autocomplete="current-password" placeholder="6자 이상" onkeydown="if(event.key==='Enter')authSubmit()"></div>
+    <div class="auth-remember" id="authRememberRow"><label><input type="checkbox" id="authRemember"> 자동로그인 <span class="auth-remember-hint">(체크 시 24시간 동안 로그인 유지)</span></label></div>
+    <div class="auth-msg" id="authMsg"></div>
+    <button class="btn btn-primary" id="authSubmit" onclick="authSubmit()" style="width:100%">로그인</button>
+    <div class="auth-toggle" id="authSignupRow"><span id="authToggleText">계정이 없으신가요?</span><a id="authToggleLink" onclick="authToggleMode()">회원가입</a></div>
+    <div class="auth-toggle" id="authForgotRow"><a onclick="setAuthMode('forgot')">비밀번호를 잊으셨나요?</a></div>
+    <div class="auth-toggle" id="authBackRow" style="display:none"><a onclick="setAuthMode('login')">← 로그인으로</a></div>
+    <div class="auth-note" id="authNote" style="display:none"></div>
+  </div>
+</div>
+
+<main class="wrap">
+
+  <!-- ============ 내 연차 ============ -->
+  <section class="page active" id="page-summary">
+    <div id="summaryContent"></div>
+  </section>
+
+  <!-- ============ 캘린더 ============ -->
+  <section class="page" id="page-calendar">
+    <div class="page-head">
+      <h1>캘린더</h1>
+      <p>휴가·출퇴근·휴일근무를 달력으로 확인하고, 날짜를 눌러 바로 등록합니다.</p>
+    </div>
+    <div class="card">
+      <div class="card-pad">
+        <div class="cal-head">
+          <div class="cal-nav">
+            <button class="btn btn-ghost btn-sm" onclick="calPrev()">◀</button>
+            <div class="cal-title" id="calTitle">-</div>
+            <button class="btn btn-ghost btn-sm" onclick="calNext()">▶</button>
+          </div>
+          <div style="display:flex;align-items:center;gap:12px">
+            <span id="calMonthUsed" style="font-size:12.5px;color:var(--muted);font-weight:600"></span>
+            <button class="btn btn-ghost btn-sm" onclick="calToday()">오늘</button>
+          </div>
+        </div>
+        <div class="cal-grid" id="calDow"></div>
+        <div class="cal-grid" id="calGrid" style="margin-top:6px"></div>
+        <div class="legend" id="calLegend"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ 휴가 등록 ============ -->
+  <section class="page" id="page-register">
+    <div class="page-head">
+      <h1>휴가 관리</h1>
+      <p>연차·반차를 등록하고, 아래에서 등록한 내역을 조회·수정·삭제합니다.</p>
+    </div>
+    <div class="card">
+      <div class="card-head"><h2 id="vacFormTitle">휴가 등록</h2></div>
+      <div class="card-pad">
+        <div class="form-grid">
+          <div class="field">
+            <label>시작일<span class="req">*</span></label>
+            <input id="vacDate" type="date" onchange="onStartChange()">
+          </div>
+          <div class="field" id="endDateField">
+            <label>종료일<span class="req">*</span></label>
+            <input id="vacEndDate" type="date" onchange="onRangeChange()">
+            <span class="hint">여러 날 연속 등록하려면 종료일을 지정하세요.</span>
+          </div>
+          <div class="field">
+            <label>휴가 유형<span class="req">*</span></label>
+            <select id="vacType" onchange="onTypeChange()">
+              <option value="연차">연차 (1일)</option>
+              <option value="오전 반차">오전 반차 (0.5일)</option>
+              <option value="오후 반차">오후 반차 (0.5일)</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>사용일수</label>
+            <input id="vacDays" value="1" readonly>
+          </div>
+          <div class="field">
+            <label>사유</label>
+            <input id="vacReason" placeholder="예) 개인 사유">
+          </div>
+          <div class="field">
+            <label>비고</label>
+            <input id="vacMemo" placeholder="선택 입력">
+          </div>
+        </div>
+        <div class="hint" id="vacRangeHint" style="margin-top:10px"></div>
+
+        <div class="balance">
+          <div><div class="i-label">총 연차</div><div class="i-val" id="balTotal">0</div></div>
+          <div><div class="i-label">사용 연차</div><div class="i-val" id="balUsed">0</div></div>
+          <div><div class="i-label">잔여 연차</div><div class="i-val g" id="balRemain">0</div></div>
+        </div>
+
+        <div class="form-actions">
+          <button class="btn btn-primary" id="vacSaveBtn" onclick="saveVacation()">휴가 등록</button>
+          <button class="btn btn-ghost" onclick="resetVacForm()">입력 초기화</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="card" style="margin-top:20px;margin-bottom:20px">
+      <div class="card-head"><h2>휴가 내역</h2></div>
+      <div class="card-pad">
+        <div class="filters">
+          <div class="field"><label>휴가 유형</label>
+            <select id="hType" onchange="renderHistory()">
+              <option value="">전체</option>
+              <option value="연차">연차</option>
+              <option value="오전 반차">오전 반차</option>
+              <option value="오후 반차">오후 반차</option>
+            </select>
+          </div>
+          <div class="field"><label>시작일</label><input id="hFrom" type="date" onchange="renderHistory()"></div>
+          <div class="field"><label>종료일</label><input id="hTo" type="date" onchange="renderHistory()"></div>
+          <button class="btn btn-ghost" onclick="resetHistoryFilter()">초기화</button>
+          <button class="btn btn-green" onclick="downloadVacCSV()">CSV 다운로드</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="table-scroll">
+        <table>
+          <thead><tr>
+            <th>번호</th><th>휴가일</th><th>유형</th><th class="num">일수</th>
+            <th>사유</th><th>비고</th><th>등록일</th><th>관리</th>
+          </tr></thead>
+          <tbody id="historyTable"></tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ 내 정보 ============ -->
+  <section class="page" id="page-profile">
+    <div class="page-head">
+      <h1>내 정보</h1>
+      <p>이름과 연도별 연차를 입력하면 잔여 연차가 자동으로 계산됩니다.</p>
+    </div>
+
+    <div class="card" style="margin-bottom:20px">
+      <div class="card-head"><h2>제목 설정</h2></div>
+      <div class="card-pad">
+        <div class="field">
+          <label>프로그램 제목</label>
+          <input id="titleInput" placeholder="예) 홍길동의 연차 관리">
+          <span class="hint">상단 제목과 브라우저 탭 이름에 표시됩니다.</span>
+        </div>
+        <div class="form-actions">
+          <button class="btn btn-primary" onclick="saveTitle()">제목 저장</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="card" style="margin-bottom:20px">
+      <div class="card-head"><h2>기본 정보</h2></div>
+      <div class="card-pad">
+        <div class="form-grid">
+          <div class="field"><label>이름<span class="req">*</span></label><input id="pfName" placeholder="예) 홍길동"></div>
+          <div class="field"><label>부서</label><input id="pfDept" placeholder="예) 경영지원팀"></div>
+          <div class="field"><label>직급</label><input id="pfPos" placeholder="예) 대리"></div>
+          <div class="field"><label>입사일</label><input id="pfJoin" type="date"></div>
+        </div>
+        <div class="form-actions">
+          <button class="btn btn-primary" onclick="saveProfileForm()">저장</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="card" style="margin-bottom:20px">
+      <div class="card-head"><h2>연도별 연차</h2></div>
+      <div class="card-pad">
+        <p class="hint" style="margin-bottom:14px;line-height:1.7">
+          해마다 부여받은 연차일수를 연도별로 등록합니다. 어떤 해에 부여량보다 많이 쓰면 잔여가 마이너스로 표시되며,
+          그 초과분은 다음 해 총 연차에서 자동으로 차감됩니다.
+        </p>
+        <div class="form-grid">
+          <div class="field"><label>연도<span class="req">*</span></label><input id="alYear" type="number" min="2000" max="2100" step="1" placeholder="예) 2026"></div>
+          <div class="field"><label>총 연차일수<span class="req">*</span></label><input id="alDays" type="number" min="0" step="0.5" placeholder="예) 15"></div>
+        </div>
+        <div class="form-actions">
+          <button class="btn btn-primary" onclick="saveAnnualLeave()">연도 저장</button>
+        </div>
+        <div class="table-scroll" style="margin-top:16px">
+          <table>
+            <thead><tr><th>연도</th><th class="num">총 연차</th><th class="num">전년 이월</th><th class="num">사용</th><th class="num">잔여</th><th>관리</th></tr></thead>
+            <tbody id="annualTable"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <div class="card" style="margin-bottom:20px">
+      <div class="card-head"><h2>계정</h2></div>
+      <div class="card-pad">
+        <div id="accountInfo" style="font-size:13.5px;color:var(--text);line-height:1.7">로그인 정보를 불러오는 중…</div>
+        <div class="form-actions" id="accountActions" style="display:none">
+          <button class="btn btn-ghost" onclick="doLogout()">로그아웃</button>
+        </div>
+        <div id="accountStatus" style="margin-top:10px;font-size:12.5px;font-weight:600;color:var(--muted)"></div>
+        <details style="margin-top:14px" id="accountSetup">
+          <summary style="cursor:pointer;font-size:12.5px;color:var(--navy);font-weight:700">계정 기능 설정 방법</summary>
+          <ol style="margin:12px 0 0 18px;font-size:12.5px;color:#59616e;line-height:1.9">
+            <li>supabase.com 프로젝트의 <b>Authentication → Providers → Email</b>을 켜고, <b>Confirm email(이메일 인증)</b>은 <b>끕니다</b>.</li>
+            <li>SQL Editor에서 아래를 실행해 계정별 데이터 테이블·보안 정책을 만듭니다.
+              <pre style="background:#f4f6f9;border:1px solid var(--line);border-radius:6px;padding:9px 11px;margin-top:6px;font-size:11.5px;line-height:1.5;overflow-x:auto;white-space:pre-wrap">create table if not exists public.leave_data (
+  user_id uuid primary key references auth.users(id) on delete cascade,
+  data jsonb,
+  updated_at timestamptz default now()
+);
+alter table public.leave_data enable row level security;
+create policy "own_select" on public.leave_data
+  for select using (auth.uid() = user_id);
+create policy "own_insert" on public.leave_data
+  for insert with check (auth.uid() = user_id);
+create policy "own_update" on public.leave_data
+  for update using (auth.uid() = user_id) with check (auth.uid() = user_id);
+create policy "own_delete" on public.leave_data
+  for delete using (auth.uid() = user_id);</pre>
+            </li>
+            <li>Project Settings → API Keys 의 <b>Project URL</b>과 <b>Publishable key</b>(sb_publishable_… / 예전 프로젝트는 anon key)를 이 파일 상단 <code>SB_CFG</code>의 url·key에 붙여넣습니다.</li>
+            <li>파일을 올리면 접속 시 로그인 화면이 뜨고, 이메일·비밀번호로 가입/로그인하면 계정별로 데이터가 저장됩니다.</li>
+            <li><b>비밀번호 재설정</b>을 쓰려면 <b>Authentication → URL Configuration</b>에서 <b>Site URL</b>을 이 앱 주소(예: https://kh21-git.github.io/LeaveUp/)로 설정하고, <b>Redirect URLs</b>에도 같은 주소를 추가합니다. (기본 제공 메일은 발송량 제한이 있어, 사용자가 많으면 SMTP 연결을 권장합니다.)</li>
+          </ol>
+        </details>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-head"><h2>데이터 관리</h2></div>
+      <div class="card-pad">
+        <div class="data-grid">
+          <div class="data-item">
+            <h3>휴가 내역 CSV</h3>
+            <p>휴가 사용 내역을 CSV 파일로 내려받습니다.</p>
+            <button class="btn btn-ghost" onclick="downloadVacCSV()">CSV 다운로드</button>
+          </div>
+          <div class="data-item">
+            <h3>전체 백업 (JSON)</h3>
+            <p>내 정보와 휴가 내역 전체를 JSON 파일로 백업합니다.</p>
+            <button class="btn btn-primary" onclick="backupJSON()">백업 다운로드</button>
+          </div>
+          <div class="data-item">
+            <h3>백업 불러오기</h3>
+            <p>JSON 백업 파일을 불러와 현재 데이터를 덮어씁니다.</p>
+            <input type="file" id="restoreFile" accept="application/json,.json" style="display:none" onchange="restoreJSON(event)">
+            <button class="btn btn-ghost" onclick="document.getElementById('restoreFile').click()">백업 파일 선택</button>
+          </div>
+          <div class="data-item danger-zone">
+            <h3 style="color:var(--red)">전체 초기화</h3>
+            <p>내 정보와 모든 휴가 내역을 삭제합니다. 되돌릴 수 없습니다.</p>
+            <button class="btn btn-danger" onclick="askReset()">전체 초기화</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ 출퇴근 기록 ============ -->
+  <section class="page" id="page-holwork">
+    <div class="page-head">
+      <h1>출퇴근 관리</h1>
+      <p>휴일근무·외근·현출·출장 등 출퇴근 기록을 등록하고 조회합니다.</p>
+    </div>
+
+    <div class="card" style="margin-bottom:20px">
+      <div class="card-head"><h2 id="hwFormTitle">출퇴근 기록 등록</h2></div>
+      <div class="card-pad">
+        <div class="form-grid">
+          <div class="field">
+            <label>근무일<span class="req">*</span></label>
+            <input id="hwDate" type="date" onchange="onHolTimeChange()">
+            <span class="hint" id="hwDayHint"></span>
+          </div>
+          <div class="field">
+            <label>근무 타입</label>
+            <select id="hwType">
+              <option value="">(선택 안 함)</option>
+              <option value="휴일근무">휴일근무</option>
+              <option value="외근">외근</option>
+              <option value="현출">현출</option>
+              <option value="출장">출장</option>
+            </select>
+            <span class="hint">출근 시간만 등록하려면 비워 두어도 됩니다.</span>
+          </div>
+          <div class="field">
+            <label>출근 시간</label>
+            <input id="hwIn" type="time" onchange="onHolTimeChange()">
+          </div>
+          <div class="field">
+            <label>퇴근 시간</label>
+            <input id="hwOut" type="time" onchange="onHolTimeChange()">
+          </div>
+          <div class="field">
+            <label>근무 시간</label>
+            <input id="hwDuration" value="-" readonly>
+          </div>
+          <div class="field">
+            <label>사유</label>
+            <input id="hwReason" placeholder="예) 긴급 대응 / 정기 점검">
+          </div>
+          <div class="field">
+            <label>비고</label>
+            <input id="hwMemo" placeholder="선택 입력">
+          </div>
+        </div>
+        <div class="form-actions">
+          <button class="btn btn-primary" id="hwSaveBtn" onclick="saveHolwork()">출퇴근 기록 등록</button>
+          <button class="btn btn-ghost" onclick="resetHolworkForm()">입력 초기화</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-head">
+        <h2>출퇴근 기록 내역</h2>
+        <span id="hwSummary" style="font-size:12.5px;color:var(--muted)"></span>
+      </div>
+      <div class="card-pad">
+        <div class="table-scroll">
+          <table>
+            <thead><tr><th>번호</th><th>근무일</th><th>타입</th><th>출근</th><th>퇴근</th><th class="num">근무시간</th><th>사유</th><th>비고</th><th>관리</th></tr></thead>
+            <tbody id="holworkTable"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<div class="toast-wrap" id="toastWrap"></div>
+<div class="modal-back" id="modalBack">
+  <div class="modal">
+    <div class="modal-body">
+      <h3 id="modalTitle"></h3>
+      <p id="modalMsg"></p>
+      <div class="confirm-input" id="modalInputWrap" style="display:none">
+        <input id="modalInput" placeholder="확인 문구를 입력하세요">
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-ghost" onclick="closeModal()">취소</button>
+      <button class="btn btn-danger" id="modalOk">확인</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-back" id="dayModalBack">
+  <div class="modal">
+    <div class="modal-body">
+      <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+        <h3 id="dayModalTitle" style="margin:0"></h3>
+        <span id="dayModalBadge"></span>
+      </div>
+
+      <div style="margin-top:16px">
+        <div style="font-size:12px;color:var(--muted);font-weight:700;margin-bottom:8px">연차 · 반차</div>
+        <div id="dayModalVac"></div>
+        <button class="btn btn-ghost btn-sm" style="margin-top:10px" onclick="dayGoRegister()">＋ 이 날짜로 휴가 등록</button>
+      </div>
+
+      <div style="margin-top:18px;border-top:1px solid var(--line);padding-top:16px">
+        <div style="font-size:12px;color:var(--muted);font-weight:700;margin-bottom:8px">출퇴근 시간</div>
+        <div style="display:flex;gap:10px;flex-wrap:wrap">
+          <div class="field" style="flex:1;min-width:120px"><label>출근</label><input id="dayIn" type="time" onchange="updateDayWorkHint()"></div>
+          <div class="field" style="flex:1;min-width:120px"><label>퇴근</label><input id="dayOut" type="time" onchange="updateDayWorkHint()"></div>
+        </div>
+        <div class="hint" id="dayWorkHint" style="margin-top:8px;min-height:16px"></div>
+        <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap">
+          <button class="btn btn-primary btn-sm" onclick="saveDayAttendance()">시간 저장</button>
+          <button class="btn btn-ghost btn-sm" onclick="deleteDayAttendance()">기록 삭제</button>
+          <button class="btn btn-ghost btn-sm" id="dayHolworkBtn" onclick="dayGoHolwork()">출퇴근 기록 등록</button>
+        </div>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-ghost" onclick="closeDayModal()">닫기</button>
+    </div>
+  </div>
+</div>
+
+<!-- 캘린더 이벤트 클릭 → 바로 수정 팝업 -->
+<div class="modal-back" id="vacEditBack">
+  <div class="modal">
+    <div class="modal-body">
+      <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+        <h3 style="margin:0">휴가 수정</h3>
+        <span id="vacEditBadge"></span>
+      </div>
+      <div class="form-grid" style="margin-top:16px">
+        <div class="field">
+          <label>날짜<span class="req">*</span></label>
+          <input id="veDate" type="date" onchange="veOnChange()">
+        </div>
+        <div class="field">
+          <label>휴가 유형<span class="req">*</span></label>
+          <select id="veType" onchange="veOnChange()">
+            <option value="연차">연차 (1일)</option>
+            <option value="오전 반차">오전 반차 (0.5일)</option>
+            <option value="오후 반차">오후 반차 (0.5일)</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>사용일수</label>
+          <input id="veDays" value="1" readonly>
+        </div>
+        <div class="field">
+          <label>사유</label>
+          <input id="veReason" placeholder="예) 개인 사유">
+        </div>
+        <div class="field" style="grid-column:1/-1">
+          <label>비고</label>
+          <input id="veMemo" placeholder="선택 입력">
+        </div>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-ghost" onclick="deleteVacEdit()" style="margin-right:auto;color:var(--red)">삭제</button>
+      <button class="btn btn-ghost" onclick="closeVacEdit()">닫기</button>
+      <button class="btn btn-primary" onclick="saveVacEdit()">수정 저장</button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ============================================================
+   LeaveUP  ·  My Leave (by khkim)
+   HTML/CSS/JS + LocalStorage · 개인 단일 사용 (로그인 없음)
+   ============================================================ */
+const KEY_PROFILE = 'leave_profile';
+const KEY_VAC = 'vacations';
+const KEY_TITLE = 'leave_title';
+const KEY_SYNC = 'leave_sync_cfg';
+const KEY_ATT = 'leave_attendance';   // 출퇴근 시간 { 'YYYY-MM-DD': {in,out} }
+const KEY_HOLWORK = 'leave_holwork';   // 휴일출퇴근 기록 배열
+const KEY_COLORS = 'leave_cal_colors'; // 캘린더 표기 색상
+const KEY_LABELS = 'leave_cal_labels'; // 범례 이름
+const KEY_HIDDEN = 'leave_cal_hidden'; // 범례 숨김
+const DEF_COLORS = { full:'#9ccc65', am:'#81d4fa', pm:'#f8bbd0', hol:'#e53935', att:'#5c6bc0', hw:'#ef8e3b', out:'#26a69a', onsite:'#ab47bc', trip:'#8d6e63' };
+const DEF_LABELS = { full:'연차', am:'오전 반차', pm:'오후 반차', hol:'공휴일', att:'출퇴근', hw:'휴일근무', out:'외근', onsite:'현출', trip:'출장' };
+const LEGEND_KEYS = ['full','am','pm','hol','att','hw','out','onsite','trip'];
+/* 근무 타입 ↔ 색상 키 */
+const WORK_TYPES = [
+  {label:'휴일근무', key:'hw'},
+  {label:'외근',     key:'out'},
+  {label:'현출',     key:'onsite'},
+  {label:'출장',     key:'trip'}
+];
+function workTypeKey(t){ const m=WORK_TYPES.find(x=>x.label===t); return m?m.key:'hw'; }
+function catLabel(key){ return (calLabels && calLabels[key]) || DEF_LABELS[key] || key; }
+
+/* ============================================================
+   [설정] Supabase 계정 로그인용 값
+   아래 url, key 두 곳에 본인 Supabase 프로젝트 값을 붙여넣으면
+   이메일·비밀번호 계정 로그인이 활성화되고, 계정별로 데이터가 저장됩니다.
+   - url : Project Settings → API → Project URL (예: https://xxxx.supabase.co)
+   - key : Publishable key (sb_publishable_… / 예전 프로젝트는 anon key)
+   ※ service_role 등 비밀 키는 절대 넣지 마세요(화면에 노출됩니다).
+   두 값을 비우면 로그인 없이 이 브라우저에만 저장(로컬 모드)됩니다.
+   ============================================================ */
+const SB_CFG = {
+  url: 'https://jjjsmpakuinglydijuqx.supabase.co',   // 예) 'https://xxxx.supabase.co'
+  key: 'sb_publishable_jw6mQ0d3vsJCHlTNrH41-A_iKXSmibP'    // 예) 'sb_publishable_...' 또는 'eyJ...'
+};
+
+let profile = null;   // {name, department, position, joinDate, annualLeave}
+let vacations = [];   // [{id, vacationDate, vacationType, usedDays, reason, memo, createdAt}]
+let attendance = {};  // { 'YYYY-MM-DD': {in:'HH:MM', out:'HH:MM'} }
+let holidayWorks = []; // [{id, date, checkIn, checkOut, reason, memo, createdAt}]
+let calColors = Object.assign({}, DEF_COLORS);   // 캘린더 표기 색상
+let calLabels = {};   // 범례 사용자 지정 이름 {key:name}
+let calHidden = {};   // 숨긴 범례 {key:true}
+let legendEditMode = false;   // 범례 편집 모드
+let editVacId = null;
+let vacEditId = null;   // 캘린더 이벤트 수정 팝업에서 편집 중인 휴가 id
+let editHolId = null;
+let dayModalDate = null;
+let summaryYear = new Date().getFullYear();  // 내 연차 화면에서 보고 있는 연도
+let calYear, calMonth; // 캘린더가 보고 있는 연/월(0-based)
+let appTitle = 'LeaveUP';
+let sb = null;            // supabase client
+let authUser = null;     // {id, email}
+let authMode = 'login';  // 'login' | 'signup' | 'forgot' | 'reset'
+let recoveryMode = false; // 비밀번호 재설정 링크로 진입한 상태
+let applyingRemote = false;
+let pushTimer = null;
+
+/* ============================================================
+   [로그인 정책] 자동로그인 방지 + 세션 24시간 만료
+   - 로그인(자격증명 입력) 시각을 기록해 두고,
+     그 시각으로부터 24시간이 지나면 저장된 세션이 있어도
+     자동으로 로그인시키지 않고(자동로그인 방지) 다시 로그인하도록 함.
+   - 앱이 열려 있는 동안에도 주기적으로 만료를 검사해 로그아웃함.
+   ============================================================ */
+const KEY_LOGIN_TS  = 'leave_login_ts';          // 로그인 시각(ms) 저장 키
+const KEY_AUTOLOGIN = 'leave_autologin';         // 자동로그인 선택 여부('1'=사용)
+const SESSION_MAX_MS = 24 * 60 * 60 * 1000;      // 세션 만료 시간: 24시간
+let justAuthenticated = false;                    // 방금 자격증명으로 로그인했는지 표시(신규 로그인 vs 세션 복원 구분)
+let sessionTimer = null;                          // 만료 감시 타이머
+
+function recordLoginTime(){ try{ localStorage.setItem(KEY_LOGIN_TS, String(Date.now())); }catch(e){} }
+function clearLoginTime(){ try{ localStorage.removeItem(KEY_LOGIN_TS); }catch(e){} }
+/* 자동로그인 선택 상태 */
+function autoLoginEnabled(){ return localStorage.getItem(KEY_AUTOLOGIN) === '1'; }
+function setAutoLoginPref(on){ try{ localStorage.setItem(KEY_AUTOLOGIN, on ? '1' : '0'); }catch(e){} }
+function loginAgeMs(){
+  const raw = localStorage.getItem(KEY_LOGIN_TS);
+  const ts = raw ? Number(raw) : NaN;
+  if(!raw || isNaN(ts)) return Infinity;         // 기록 없음 → 만료로 간주(자동로그인 방지)
+  return Date.now() - ts;
+}
+function sessionExpired(){ return loginAgeMs() > SESSION_MAX_MS; }
+
+/* 복원된(저장된) 세션으로 자동 로그인 시도
+   - 자동로그인 미선택: 저장된 세션이 있어도 자동 로그인하지 않고 로그인 화면 표시
+   - 자동로그인 선택 + 24시간 경과: 만료 처리 후 재로그인 요구
+   - 자동로그인 선택 + 24시간 이내: 그대로 로그인 유지 */
+async function tryResumeSession(user){
+  if(!autoLoginEnabled()){
+    clearLoginTime();
+    try{ if(sb) await sb.auth.signOut(); }catch(e){}
+    showLogin();   // 자동로그인 꺼짐 → 매번 로그인
+    return;
+  }
+  if(sessionExpired()){
+    clearLoginTime();
+    try{ if(sb) await sb.auth.signOut(); }catch(e){}
+    showLogin('세션이 만료되었습니다(24시간 경과). 보안을 위해 다시 로그인해 주세요.');
+    return;
+  }
+  onAuthed(user);
+}
+
+/* 앱 사용 중 세션 만료 검사: 만료 시 로그아웃 처리 */
+async function enforceSessionExpiry(){
+  if(!authUser || !sb || !authEnabled()) return;
+  if(sessionExpired()){
+    clearLoginTime();
+    try{ await sb.auth.signOut(); }catch(e){}   // onSignedOut()가 이어서 호출됨
+    showLogin('세션이 만료되었습니다(24시간 경과). 보안을 위해 다시 로그인해 주세요.');
+  }
+}
+function startSessionWatch(){
+  if(sessionTimer) return;
+  sessionTimer = setInterval(enforceSessionExpiry, 60 * 1000);   // 1분마다 검사
+}
+
+/* ---------- 저장 / 불러오기 ---------- */
+/* 구버전 profile.totalLeave → 연도별 profile.annualLeave 로 이관 */
+function migrateProfile(){
+  if(profile && !profile.annualLeave){
+    profile.annualLeave = {};
+    const t = Number(profile.totalLeave);
+    if(profile.totalLeave!=null && !isNaN(t)) profile.annualLeave[String(curYear())] = t;
+  }
+}
+function loadData(){
+  try{ profile = JSON.parse(localStorage.getItem(KEY_PROFILE)); }catch(e){ profile = null; }
+  try{ const v = JSON.parse(localStorage.getItem(KEY_VAC)); vacations = Array.isArray(v)?v:[]; }catch(e){ vacations = []; }
+  try{ const a = JSON.parse(localStorage.getItem(KEY_ATT)); attendance = (a && typeof a==='object') ? a : {}; }catch(e){ attendance = {}; }
+  try{ const h = JSON.parse(localStorage.getItem(KEY_HOLWORK)); holidayWorks = Array.isArray(h)?h:[]; }catch(e){ holidayWorks = []; }
+  try{ const c = JSON.parse(localStorage.getItem(KEY_COLORS)); calColors = Object.assign({}, DEF_COLORS, (c && typeof c==='object') ? c : {}); }catch(e){ calColors = Object.assign({}, DEF_COLORS); }
+  try{ const l = JSON.parse(localStorage.getItem(KEY_LABELS)); calLabels = (l && typeof l==='object') ? l : {}; }catch(e){ calLabels = {}; }
+  try{ const hd = JSON.parse(localStorage.getItem(KEY_HIDDEN)); calHidden = (hd && typeof hd==='object') ? hd : {}; }catch(e){ calHidden = {}; }
+  migrateProfile();
+}
+function saveProfile(){ localStorage.setItem(KEY_PROFILE, JSON.stringify(profile)); syncPushDebounced(); }
+function saveVac(){ localStorage.setItem(KEY_VAC, JSON.stringify(vacations)); syncPushDebounced(); }
+function saveAtt(){ localStorage.setItem(KEY_ATT, JSON.stringify(attendance)); syncPushDebounced(); }
+function saveHol(){ localStorage.setItem(KEY_HOLWORK, JSON.stringify(holidayWorks)); syncPushDebounced(); }
+function saveColors(){ localStorage.setItem(KEY_COLORS, JSON.stringify(calColors)); syncPushDebounced(); }
+function saveLegendCfg(){ localStorage.setItem(KEY_LABELS, JSON.stringify(calLabels)); localStorage.setItem(KEY_HIDDEN, JSON.stringify(calHidden)); syncPushDebounced(); }
+function hasProfile(){ return !!(profile && profile.name); }
+
+/* ---------- 유틸 ---------- */
+function uid(p){ return p+'_'+Date.now().toString(36)+Math.random().toString(36).slice(2,6); }
+function nowISO(){ return new Date().toISOString().slice(0,19); }
+function esc(s){ return (s==null?'':String(s)).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+function fmtDate(d){ return d || '-'; }
+function fmtNum(n){ return Number.isInteger(n)?String(n):n.toFixed(1); }
+/* ---------- 시간/근무시간 ---------- */
+function timeToMin(t){ if(!t || !/^\d{1,2}:\d{2}$/.test(t)) return null; const [h,m]=t.split(':').map(Number); return h*60+m; }
+function workMinutes(inT, outT){ const a=timeToMin(inT), b=timeToMin(outT); if(a==null||b==null) return null; let diff=b-a; if(diff<0) diff+=1440; return diff; }
+function fmtDur(mins){ if(mins==null) return '-'; const h=Math.floor(mins/60), m=mins%60; return m? `${h}시간 ${m}분` : `${h}시간`; }
+function fmtDurShort(mins){ if(mins==null) return ''; const h=Math.floor(mins/60), m=mins%60; return m? `${h}h${m}m` : `${h}h`; }
+function isRestDay(dateStr){ return isWeekend(dateStr) || isHoliday(dateStr); }
+function typeTag(t){ const m={'연차':'t-full','오전 반차':'t-am','오후 반차':'t-pm'}; return `<span class="type-tag ${m[t]||'t-full'}">${esc(t)}</span>`; }
+
+/* ---------- 대한민국 공휴일 (2025~2030) ----------
+   sub:true = 대체공휴일 / 인사혁신처 관공서 공휴일 기준.
+   음력 명절·대체휴일은 해마다 바뀌므로 연도별로 직접 지정.
+   (근로자의날·제헌절 포함, 2026년 지방선거일·2028년 총선일 임시공휴일 반영) */
+const HOLIDAYS = {
+  // 2025
+  '2025-01-01':{name:'신정'}, '2025-01-28':{name:'설날 연휴'}, '2025-01-29':{name:'설날'},
+  '2025-01-30':{name:'설날 연휴'}, '2025-03-01':{name:'삼일절'}, '2025-03-03':{name:'대체공휴일',sub:true},
+  '2025-05-05':{name:'어린이날·부처님오신날'}, '2025-05-06':{name:'대체공휴일',sub:true}, '2025-06-06':{name:'현충일'},
+  '2025-08-15':{name:'광복절'}, '2025-10-03':{name:'개천절'}, '2025-10-05':{name:'추석 연휴'},
+  '2025-10-06':{name:'추석'}, '2025-10-07':{name:'추석 연휴'}, '2025-10-08':{name:'대체공휴일',sub:true},
+  '2025-10-09':{name:'한글날'}, '2025-12-25':{name:'성탄절'},
+  // 2026
+  '2026-01-01':{name:'신정'}, '2026-02-16':{name:'설날 연휴'}, '2026-02-17':{name:'설날'},
+  '2026-02-18':{name:'설날 연휴'}, '2026-03-01':{name:'삼일절'}, '2026-03-02':{name:'대체공휴일',sub:true},
+  '2026-05-01':{name:'근로자의날'}, '2026-05-05':{name:'어린이날'}, '2026-05-24':{name:'부처님오신날'},
+  '2026-05-25':{name:'대체공휴일',sub:true}, '2026-06-03':{name:'지방선거일'}, '2026-06-06':{name:'현충일'},
+  '2026-07-17':{name:'제헌절'}, '2026-08-15':{name:'광복절'}, '2026-08-17':{name:'대체공휴일',sub:true},
+  '2026-09-24':{name:'추석 연휴'}, '2026-09-25':{name:'추석'}, '2026-09-26':{name:'추석 연휴'},
+  '2026-10-03':{name:'개천절'}, '2026-10-05':{name:'대체공휴일',sub:true}, '2026-10-09':{name:'한글날'},
+  '2026-12-25':{name:'성탄절'},
+  // 2027
+  '2027-01-01':{name:'신정'}, '2027-02-06':{name:'설날 연휴'}, '2027-02-07':{name:'설날'},
+  '2027-02-08':{name:'설날 연휴'}, '2027-02-09':{name:'대체공휴일',sub:true}, '2027-03-01':{name:'삼일절'},
+  '2027-05-01':{name:'근로자의날'}, '2027-05-03':{name:'대체공휴일',sub:true}, '2027-05-05':{name:'어린이날'},
+  '2027-05-13':{name:'부처님오신날'}, '2027-06-06':{name:'현충일'}, '2027-07-17':{name:'제헌절'},
+  '2027-07-19':{name:'대체공휴일',sub:true}, '2027-08-15':{name:'광복절'}, '2027-08-16':{name:'대체공휴일',sub:true},
+  '2027-09-14':{name:'추석 연휴'}, '2027-09-15':{name:'추석'}, '2027-09-16':{name:'추석 연휴'},
+  '2027-10-03':{name:'개천절'}, '2027-10-04':{name:'대체공휴일',sub:true}, '2027-10-09':{name:'한글날'},
+  '2027-10-11':{name:'대체공휴일',sub:true}, '2027-12-25':{name:'성탄절'}, '2027-12-27':{name:'대체공휴일',sub:true},
+  // 2028
+  '2028-01-01':{name:'신정'}, '2028-01-26':{name:'설날 연휴'}, '2028-01-27':{name:'설날'},
+  '2028-01-28':{name:'설날 연휴'}, '2028-03-01':{name:'삼일절'}, '2028-04-12':{name:'국회의원선거일'},
+  '2028-05-01':{name:'근로자의날'}, '2028-05-02':{name:'부처님오신날'}, '2028-05-05':{name:'어린이날'},
+  '2028-06-06':{name:'현충일'}, '2028-07-17':{name:'제헌절'}, '2028-08-15':{name:'광복절'},
+  '2028-10-02':{name:'추석 연휴'}, '2028-10-03':{name:'추석·개천절'}, '2028-10-04':{name:'추석 연휴'},
+  '2028-10-05':{name:'대체공휴일',sub:true}, '2028-10-09':{name:'한글날'}, '2028-12-25':{name:'성탄절'},
+  // 2029
+  '2029-01-01':{name:'신정'}, '2029-02-12':{name:'설날 연휴'}, '2029-02-13':{name:'설날'},
+  '2029-02-14':{name:'설날 연휴'}, '2029-03-01':{name:'삼일절'}, '2029-05-01':{name:'근로자의날'},
+  '2029-05-05':{name:'어린이날'}, '2029-05-07':{name:'대체공휴일',sub:true}, '2029-05-20':{name:'부처님오신날'},
+  '2029-05-21':{name:'대체공휴일',sub:true}, '2029-06-06':{name:'현충일'}, '2029-07-17':{name:'제헌절'},
+  '2029-08-15':{name:'광복절'}, '2029-09-21':{name:'추석 연휴'}, '2029-09-22':{name:'추석'},
+  '2029-09-23':{name:'추석 연휴'}, '2029-09-24':{name:'대체공휴일',sub:true}, '2029-10-03':{name:'개천절'},
+  '2029-10-09':{name:'한글날'}, '2029-12-25':{name:'성탄절'},
+  // 2030
+  '2030-01-01':{name:'신정'}, '2030-02-02':{name:'설날 연휴'}, '2030-02-03':{name:'설날'},
+  '2030-02-04':{name:'설날 연휴'}, '2030-02-05':{name:'대체공휴일',sub:true}, '2030-03-01':{name:'삼일절'},
+  '2030-05-01':{name:'근로자의날'}, '2030-05-05':{name:'어린이날'}, '2030-05-06':{name:'대체공휴일',sub:true},
+  '2030-05-09':{name:'부처님오신날'}, '2030-06-06':{name:'현충일'}, '2030-07-17':{name:'제헌절'},
+  '2030-08-15':{name:'광복절'}, '2030-09-11':{name:'추석 연휴'}, '2030-09-12':{name:'추석'},
+  '2030-09-13':{name:'추석 연휴'}, '2030-10-03':{name:'개천절'}, '2030-10-09':{name:'한글날'},
+  '2030-12-25':{name:'성탄절'},
+};
+function isHoliday(dateStr){ return !!HOLIDAYS[dateStr]; }
+function isWeekend(dateStr){ const g=new Date(dateStr+'T00:00:00').getDay(); return g===0 || g===6; }
+/* 시작~종료(포함) 사이의 모든 날짜를 YYYY-MM-DD 배열로 반환 */
+function dateRange(start, end){
+  const out=[]; const d=new Date(start+'T00:00:00'), e=new Date(end+'T00:00:00');
+  if(isNaN(d)||isNaN(e)||d>e) return out;
+  while(d<=e){ out.push(ymd(d.getFullYear(), d.getMonth(), d.getDate())); d.setDate(d.getDate()+1); }
+  return out;
+}
+
+/* ---------- 연도별 계산 (초과 사용 시 다음 해로 이월) ---------- */
+function curYear(){ return new Date().getFullYear(); }
+function yearOf(dateStr){ return (dateStr||'').slice(0,4); }
+function annualMap(){ return (profile && profile.annualLeave) ? profile.annualLeave : {}; }
+function grantedLeave(year){ const v = annualMap()[String(year)]; return v==null ? 0 : (Number(v)||0); }
+function hasGrant(year){ return annualMap()[String(year)] != null; }
+function usedInYear(year){
+  const ys = String(year);
+  return vacations.filter(v=>yearOf(v.vacationDate)===ys).reduce((s,v)=>s+(Number(v.usedDays)||0),0);
+}
+/* 부여 설정 또는 사용 내역이 있는 모든 연도 (오름차순) */
+function relevantYears(){
+  const s = new Set();
+  Object.keys(annualMap()).forEach(y=>{ const n=Number(y); if(!isNaN(n)) s.add(n); });
+  vacations.forEach(v=>{ const n=Number(yearOf(v.vacationDate)); if(!isNaN(n)&&n) s.add(n); });
+  return [...s].sort((a,b)=>a-b);
+}
+/* 전년도까지 누적된 초과분(음수)을 해당 연도로 이월 */
+function carryIn(year){
+  year = Number(year);
+  const yrs = relevantYears();
+  const start = yrs.length ? Math.min(yrs[0], year) : year;
+  let carry = 0;
+  for(let y=start; y<year; y++){
+    const remain = grantedLeave(y) + carry - usedInYear(y);
+    carry = remain < 0 ? remain : 0;
+  }
+  return carry;
+}
+/* 이월(음수)이 반영된 해당 연도 실제 사용가능 연차 */
+function effectiveTotal(year){ return grantedLeave(year) + carryIn(year); }
+function remainOf(year){ return effectiveTotal(year) - usedInYear(year); }
+function usageRateOf(year){ const g = grantedLeave(year); return g<=0 ? 0 : usedInYear(year)/g*100; }
+/* 총 잔여(전체 연도 합산 관점) — 가장 최근 관련 연도의 이월까지 반영한 현재 시점 잔여 */
+function stateOf(r){
+  if(r<0) return {label:'초과 사용', color:'var(--red)'};
+  if(r===0) return {label:'소진', color:'var(--gray)'};
+  if(r<5) return {label:'주의', color:'var(--amber)'};
+  return {label:'정상', color:'var(--green-dark)'};
+}
+/* 기존 이름 호환 (현재 연도 기준) */
+function totalLeave(){ return effectiveTotal(curYear()); }
+function usedDays(){ return usedInYear(curYear()); }
+function remainDays(){ return remainOf(curYear()); }
+
+/* ---------- 탭 전환 ---------- */
+document.getElementById('tabBar').addEventListener('click', e=>{
+  const t = e.target.closest('.tab'); if(!t) return;
+  goTab(t.dataset.page);
+});
+function goTab(page){
+  document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));
+  document.querySelectorAll('.page').forEach(x=>x.classList.remove('active'));
+  document.querySelector(`.tab[data-page="${page}"]`).classList.add('active');
+  document.getElementById('page-'+page).classList.add('active');
+  renderAll();
+}
+
+/* ============================================================
+   내 정보
+   ============================================================ */
+function saveProfileForm(){
+  const name = document.getElementById('pfName').value.trim();
+  const dept = document.getElementById('pfDept').value.trim();
+  const pos  = document.getElementById('pfPos').value.trim();
+  const join = document.getElementById('pfJoin').value;
+
+  if(!name){ toast('이름을 입력해 주세요.','warn'); return; }
+
+  const annual = (profile && profile.annualLeave) ? profile.annualLeave : {};
+  profile = {name, department:dept, position:pos, joinDate:join, annualLeave:annual};
+  saveProfile();
+  toast('내 정보가 저장되었습니다.','ok');
+  renderAll();
+}
+function fillProfileForm(){
+  document.getElementById('pfName').value  = profile?.name || '';
+  document.getElementById('pfDept').value  = profile?.department || '';
+  document.getElementById('pfPos').value   = profile?.position || '';
+  document.getElementById('pfJoin').value  = profile?.joinDate || '';
+  const alYear = document.getElementById('alYear');
+  if(alYear && !alYear.value) alYear.value = curYear();
+  renderAnnualTable();
+}
+
+/* ---------- 연도별 연차 부여 ---------- */
+function saveAnnualLeave(){
+  if(!profile || !profile.name){ toast('먼저 기본 정보(이름)를 저장해 주세요.','warn'); return; }
+  const yearRaw = document.getElementById('alYear').value.trim();
+  const daysRaw = document.getElementById('alDays').value.trim();
+  if(yearRaw===''){ toast('연도를 입력해 주세요.','warn'); return; }
+  if(daysRaw===''){ toast('총 연차일수를 입력해 주세요.','warn'); return; }
+  const year = parseInt(yearRaw, 10);
+  const days = Number(daysRaw);
+  if(isNaN(year) || year<2000 || year>2100){ toast('연도를 올바르게 입력해 주세요.','warn'); return; }
+  if(isNaN(days) || days<0){ toast('총 연차는 0 이상의 숫자여야 합니다.','warn'); return; }
+  if(!profile.annualLeave) profile.annualLeave = {};
+  profile.annualLeave[String(year)] = days;
+  saveProfile();
+  document.getElementById('alDays').value = '';
+  toast(`${year}년 총 연차 ${fmtNum(days)}일 저장`,'ok');
+  renderAll();
+}
+function editAnnualLeave(year){
+  document.getElementById('alYear').value = year;
+  document.getElementById('alDays').value = grantedLeave(year);
+  document.getElementById('alYear').scrollIntoView({behavior:'smooth', block:'center'});
+}
+function deleteAnnualLeave(year){
+  confirmModal('연도 삭제', `${year}년 총 연차 설정을 삭제하시겠습니까? (등록된 휴가 내역은 지워지지 않습니다.)`, ()=>{
+    if(profile && profile.annualLeave) delete profile.annualLeave[String(year)];
+    saveProfile();
+    toast(`${year}년 부여 설정 삭제`,'ok');
+    renderAll();
+  });
+}
+function renderAnnualTable(){
+  const tb = document.getElementById('annualTable'); if(!tb) return;
+  const years = new Set(relevantYears());
+  years.add(curYear());                         // 올해는 항상 표시
+  const list = [...years].sort((a,b)=>b-a);      // 최신 연도 위로
+  if(list.length===0){ tb.innerHTML = `<tr><td colspan="6"><div class="empty"><p>등록된 연도가 없습니다.</p></div></td></tr>`; return; }
+  tb.innerHTML = list.map(y=>{
+    const set = hasGrant(y);
+    const grant = grantedLeave(y);
+    const ci = carryIn(y);
+    const used = usedInYear(y);
+    const rem = remainOf(y);
+    const ciTxt = ci<0 ? `<span style="color:var(--red)">${fmtNum(ci)}</span>` : '0';
+    const remCls = rem<0 ? 'color:var(--red);font-weight:700' : 'color:var(--green-dark);font-weight:700';
+    return `<tr>
+      <td>${y}년${y===curYear()?' <span style="font-size:11px;color:var(--navy)">(올해)</span>':''}</td>
+      <td class="num">${set?fmtNum(grant):'<span style="color:var(--muted)">미설정</span>'}</td>
+      <td class="num">${ciTxt}</td>
+      <td class="num">${fmtNum(used)}</td>
+      <td class="num" style="${remCls}">${fmtNum(rem)}</td>
+      <td>
+        <button class="btn-icon" onclick="editAnnualLeave(${y})">수정</button>
+        ${set?`<button class="btn-icon del" onclick="deleteAnnualLeave(${y})">삭제</button>`:''}
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+/* ============================================================
+   휴가 등록 / 수정 / 삭제
+   ============================================================ */
+/* 반차 선택 시 종료일 숨김(하루만) / 연차 선택 시 종료일 표시 */
+function onTypeChange(){
+  const isHalf = document.getElementById('vacType').value !== '연차';
+  const endField = document.getElementById('endDateField');
+  if(isHalf){
+    endField.style.display = 'none';
+    document.getElementById('vacEndDate').value = '';
+  }else{
+    endField.style.display = editVacId ? 'none' : '';   // 수정 모드에서는 하루만
+  }
+  onRangeChange();
+}
+/* 시작일 선택 시: 종료일이 비었거나 시작일보다 빠르면 종료일을 시작일로 자동 설정 */
+function onStartChange(){
+  const start = document.getElementById('vacDate').value;
+  const endEl = document.getElementById('vacEndDate');
+  if(start && (!endEl.value || endEl.value < start)){
+    endEl.value = start;
+  }
+  onRangeChange();
+}
+/* 시작/종료일·유형에 따라 사용일수와 안내 문구 갱신 */
+function onRangeChange(){
+  const start = document.getElementById('vacDate').value;
+  const end   = document.getElementById('vacEndDate').value;
+  const type  = document.getElementById('vacType').value;
+  const daysEl = document.getElementById('vacDays');
+  const hintEl = document.getElementById('vacRangeHint');
+
+  // 종료일 최소값을 시작일로 제한
+  document.getElementById('vacEndDate').min = start || '';
+  showBalance();   // 시작일 연도에 맞춰 잔액 갱신
+
+  if(type !== '연차'){                     // 반차: 항상 0.5일 하루
+    daysEl.value = '0.5';
+    hintEl.textContent = '';
+    return;
+  }
+  if(!start){ daysEl.value = '1'; hintEl.textContent=''; return; }
+
+  // 단일일(종료일 없음/시작과 동일): 그 날 그대로 1일
+  if(!end || end === start){
+    daysEl.value = '1';
+    hintEl.textContent = (isWeekend(start)||isHoliday(start))
+      ? '※ 선택한 날은 주말/공휴일입니다. 등록은 가능하지만 확인해 주세요.' : '';
+    return;
+  }
+  // 범위: 주말·공휴일 제외한 근무일만 계산
+  const all = dateRange(start, end);
+  if(all.length===0){ daysEl.value='0'; hintEl.textContent='종료일이 시작일보다 빠릅니다.'; return; }
+  const work = all.filter(dt => !isWeekend(dt) && !isHoliday(dt));
+  const excluded = all.length - work.length;
+  daysEl.value = fmtNum(work.length);
+  hintEl.textContent = `${start} ~ ${end} (${all.length}일) 중 주말·공휴일 ${excluded}일을 제외한 `
+    + `${work.length}일이 연차로 등록됩니다.`;
+}
+/* 초기화·기존 호출 호환용 */
+function showUsedDays(){ onRangeChange(); }
+/* 등록 중인 시작일의 연도(없으면 올해) 기준 잔액 표시 */
+function regYear(){
+  const s = document.getElementById('vacDate')?.value;
+  const y = s ? Number(yearOf(s)) : NaN;
+  return (!isNaN(y) && y) ? y : curYear();
+}
+function showBalance(){
+  const y = regYear();
+  const ci = carryIn(y);
+  document.getElementById('balTotal').textContent = fmtNum(effectiveTotal(y));
+  document.getElementById('balUsed').textContent  = fmtNum(usedInYear(y));
+  const r = remainOf(y), el = document.getElementById('balRemain');
+  el.textContent = fmtNum(r);
+  el.className = 'i-val ' + (r<0?'r':r===0?'':'g');
+  // 라벨에 연도/이월 표기
+  const labels = document.querySelectorAll('#page-register .balance .i-label');
+  if(labels.length>=3){
+    labels[0].textContent = `${y}년 사용가능` + (ci<0 ? ` (이월 ${fmtNum(ci)})` : '');
+    labels[1].textContent = `${y}년 사용`;
+    labels[2].textContent = `${y}년 잔여`;
+  }
+}
+
+/* 중복 검사: 같은 날 연차는 어떤 항목과도 충돌, 반차는 같은 유형만 충돌 (오전+오후 허용) */
+function hasConflict(date, type, excludeId){
+  const day = vacations.filter(v=>v.vacationDate===date && v.id!==excludeId);
+  if(day.length===0) return false;
+  if(day.some(v=>v.vacationType==='연차')) return true;
+  if(type==='연차') return true;
+  return day.some(v=>v.vacationType===type);
+}
+
+function saveVacation(){
+  if(!hasProfile()){
+    toast('먼저 내 정보를 입력해 주세요.','warn');
+    goTab('profile');
+    return;
+  }
+  const start = document.getElementById('vacDate').value;
+  const end   = document.getElementById('vacEndDate').value;
+  const type  = document.getElementById('vacType').value;
+  const reason= document.getElementById('vacReason').value.trim();
+  const memo  = document.getElementById('vacMemo').value.trim();
+
+  if(!start){ toast('시작일을 입력해 주세요.','warn'); return; }
+  if(!type){ toast('휴가 유형을 선택해 주세요.','warn'); return; }
+
+  /* ---------- 수정 모드: 하루짜리 그대로 수정 ---------- */
+  if(editVacId){
+    if(hasConflict(start, type, editVacId)){ toast('이미 등록된 휴가 내역입니다.','err'); return; }
+    const days = (type==='연차') ? 1 : 0.5;
+    const v = vacations.find(x=>x.id===editVacId);
+    Object.assign(v, {vacationDate:start, vacationType:type, usedDays:days, reason, memo});
+    saveVac(); resetVacForm(); renderAll();
+    toast('휴가 수정 완료','ok');
+    return;
+  }
+
+  /* ---------- 반차 또는 단일 연차: 하루 등록 ---------- */
+  const isRange = (type==='연차') && end && end!==start;
+  if(!isRange){
+    if(hasConflict(start, type, null)){ toast('이미 등록된 휴가 내역입니다.','err'); return; }
+    const days = (type==='연차') ? 1 : 0.5;
+    const y = Number(yearOf(start));
+    const before = remainOf(y);
+    vacations.push({id:uid('vac'), vacationDate:start, vacationType:type, usedDays:days, reason, memo, createdAt:nowISO()});
+    saveVac(); resetVacForm(); renderAll();
+    if(before - days < 0){
+      toast(`휴가 등록 완료 · ${y}년 잔여 ${fmtNum(before-days)}일 (초과분은 다음 해에서 차감)`,'warn');
+    }else{
+      toast('휴가 등록 완료','ok');
+    }
+    return;
+  }
+
+  /* ---------- 연차 범위: 주말·공휴일 제외하고 여러 건 등록 ---------- */
+  const all = dateRange(start, end);
+  if(all.length===0){ toast('종료일은 시작일과 같거나 이후여야 합니다.','warn'); return; }
+
+  const target = all.filter(dt => !isWeekend(dt) && !isHoliday(dt));   // 근무일만
+  if(target.length===0){ toast('선택한 기간이 모두 주말·공휴일입니다.','warn'); return; }
+
+  const toAdd = target.filter(dt => !hasConflict(dt, '연차', null));   // 이미 등록된 날 제외
+  const skipped = target.length - toAdd.length;
+  if(toAdd.length===0){ toast('선택한 기간의 연차가 이미 모두 등록되어 있습니다.','warn'); return; }
+
+  const yr = Number(yearOf(start));
+  const remBefore = remainOf(yr);
+
+  toAdd.forEach(dt => vacations.push({
+    id:uid('vac'), vacationDate:dt, vacationType:'연차', usedDays:1, reason, memo, createdAt:nowISO()
+  }));
+  saveVac(); resetVacForm(); renderAll();
+
+  const excludedCnt = all.length - target.length;
+  let msg = `연차 ${toAdd.length}일 등록 완료`;
+  const notes = [];
+  if(excludedCnt>0) notes.push(`주말·공휴일 ${excludedCnt}일 제외`);
+  if(skipped>0) notes.push(`기등록 ${skipped}일 건너뜀`);
+  if(remBefore - toAdd.length < 0) notes.push(`${yr}년 잔여 ${fmtNum(remBefore - toAdd.length)}일·초과분 다음 해 차감`);
+  if(notes.length) msg += ` (${notes.join(', ')})`;
+  toast(msg,'ok');
+}
+
+function editVacation(id){
+  const v = vacations.find(x=>x.id===id); if(!v) return;
+  editVacId = id;
+  goTab('register');
+  document.getElementById('vacDate').value = v.vacationDate;
+  document.getElementById('vacEndDate').value = '';
+  document.getElementById('vacType').value = v.vacationType;
+  onTypeChange();
+  document.getElementById('vacReason').value = v.reason || '';
+  document.getElementById('vacMemo').value = v.memo || '';
+  document.getElementById('vacFormTitle').textContent = '휴가 수정';
+  document.getElementById('vacSaveBtn').textContent = '수정 저장';
+  window.scrollTo({top:0, behavior:'smooth'});
+}
+
+/* ---------- 캘린더 이벤트 클릭 → 바로 수정 팝업 ---------- */
+function veDaysFor(type){ return type==='연차' ? 1 : 0.5; }
+function veOnChange(){
+  document.getElementById('veDays').value = fmtNum(veDaysFor(document.getElementById('veType').value));
+}
+/* 등록된 이벤트 값을 불러와 팝업에 채워 띄움 */
+function openVacEdit(id){
+  const v = vacations.find(x=>x.id===id); if(!v) return;
+  vacEditId = id;
+  closeDayModal();   // 날짜 상세가 열려 있으면 닫고 수정 팝업으로 전환
+  document.getElementById('veDate').value   = v.vacationDate;
+  document.getElementById('veType').value   = v.vacationType;
+  document.getElementById('veReason').value = v.reason || '';
+  document.getElementById('veMemo').value   = v.memo || '';
+  veOnChange();
+  const wdk = ['일','월','화','수','목','금','토'][new Date(v.vacationDate+'T00:00:00').getDay()];
+  document.getElementById('vacEditBadge').innerHTML =
+    `<span class="type-tag" style="background:#eef1f5;color:var(--muted)">${esc(v.vacationDate)} (${wdk})</span>`;
+  document.getElementById('vacEditBack').classList.add('show');
+}
+function closeVacEdit(){ document.getElementById('vacEditBack').classList.remove('show'); vacEditId = null; }
+function saveVacEdit(){
+  if(!vacEditId) return;
+  const v = vacations.find(x=>x.id===vacEditId); if(!v){ closeVacEdit(); return; }
+  const date   = document.getElementById('veDate').value;
+  const type   = document.getElementById('veType').value;
+  const reason = document.getElementById('veReason').value.trim();
+  const memo   = document.getElementById('veMemo').value.trim();
+  if(!date){ toast('날짜를 입력해 주세요.','warn'); return; }
+  if(!type){ toast('휴가 유형을 선택해 주세요.','warn'); return; }
+  if(hasConflict(date, type, vacEditId)){ toast('이미 등록된 휴가 내역입니다.','err'); return; }
+  Object.assign(v, { vacationDate:date, vacationType:type, usedDays:veDaysFor(type), reason, memo });
+  if(editVacId===vacEditId) resetVacForm();   // 등록 탭에서 같은 항목을 편집 중이면 폼 초기화
+  saveVac(); renderAll();
+  closeVacEdit();
+  toast('휴가 수정 완료','ok');
+}
+function deleteVacEdit(){
+  if(!vacEditId) return;
+  const id = vacEditId;
+  const v = vacations.find(x=>x.id===id); if(!v){ closeVacEdit(); return; }
+  confirmModal('휴가 삭제', `${v.vacationDate} · ${v.vacationType} 내역을 삭제하시겠습니까?`, ()=>{
+    vacations = vacations.filter(x=>x.id!==id);
+    if(editVacId===id) resetVacForm();
+    saveVac();
+    closeVacEdit();
+    toast('휴가 삭제 완료','ok');
+    renderAll();
+  });
+}
+
+function resetVacForm(){
+  editVacId = null;
+  document.getElementById('vacDate').value = '';
+  document.getElementById('vacEndDate').value = '';
+  document.getElementById('vacType').value = '연차';
+  document.getElementById('vacDays').value = '1';
+  document.getElementById('vacReason').value = '';
+  document.getElementById('vacMemo').value = '';
+  document.getElementById('vacRangeHint').textContent = '';
+  document.getElementById('vacFormTitle').textContent = '휴가 등록';
+  document.getElementById('vacSaveBtn').textContent = '휴가 등록';
+  onTypeChange();   // 종료일 필드 표시 상태 복원
+}
+
+function deleteVacation(id){
+  const v = vacations.find(x=>x.id===id); if(!v) return;
+  confirmModal('휴가 삭제', `${v.vacationDate} · ${v.vacationType} 내역을 삭제하시겠습니까?`, ()=>{
+    vacations = vacations.filter(x=>x.id!==id);
+    saveVac();
+    if(editVacId===id) resetVacForm();
+    toast('휴가 삭제 완료','ok');
+    renderAll();
+  });
+}
+
+/* ============================================================
+   내 연차 (요약)
+   ============================================================ */
+function summaryPrevYear(){ summaryYear--; renderSummary(); }
+function summaryNextYear(){ summaryYear++; renderSummary(); }
+function renderSummary(){
+  const box = document.getElementById('summaryContent');
+  if(!hasProfile()){
+    box.innerHTML = `
+      <div class="setup">
+        <div class="ico">🌿</div>
+        <h2>시작하기 전에 내 정보를 입력하세요</h2>
+        <p>이름과 연도별 연차를 입력하면 잔여 연차가 자동으로 계산됩니다.</p>
+        <button class="btn btn-primary" onclick="goTab('profile')">내 정보 입력하기</button>
+      </div>`;
+    return;
+  }
+  const y = summaryYear;
+  const granted = grantedLeave(y);
+  const ci = carryIn(y);
+  const total = effectiveTotal(y);      // 부여 + 이월(음수)
+  const used = usedInYear(y);
+  const remain = remainOf(y);
+  const rate = usageRateOf(y);
+  const s = stateOf(remain);
+
+  const yv = vacations.filter(v=>yearOf(v.vacationDate)===String(y));
+  const fullCnt = yv.filter(v=>v.vacationType==='연차').length;
+  const halfCnt = yv.filter(v=>v.vacationType!=='연차').length;
+
+  const recent = yv.slice().sort((a,b)=>(b.vacationDate||'').localeCompare(a.vacationDate||'')).slice(0,10);
+  const recentRows = recent.length
+    ? recent.map(v=>`<tr>
+        <td>${fmtDate(v.vacationDate)}</td>
+        <td>${typeTag(v.vacationType)}</td>
+        <td class="num">${fmtNum(Number(v.usedDays)||0)}</td>
+        <td>${esc(v.reason)||'-'}</td>
+        <td>${esc(v.memo)||'-'}</td>
+      </tr>`).join('')
+    : `<tr><td colspan="5"><div class="empty"><div class="ico">🗓️</div><p>${y}년 휴가 사용 내역이 없습니다.</p><small>휴가 등록에서 내역을 추가해 보세요.</small></div></td></tr>`;
+
+  const ciNote = ci<0
+    ? `<div style="margin-bottom:16px;padding:11px 14px;background:#fdf3f3;border:1px solid #f0cccc;border-radius:10px;font-size:12.5px;color:var(--red);font-weight:600">
+         전년도 초과 사용분 ${fmtNum(ci)}일이 ${y}년 연차에서 차감되었습니다. (총 연차 ${fmtNum(granted)}일 − 이월 ${fmtNum(-ci)}일 = 사용가능 ${fmtNum(total)}일)
+       </div>` : '';
+
+  box.innerHTML = `
+    <div class="hero">
+      <div class="who">
+        <div class="nm">${esc(profile.name)}</div>
+        <div class="sub">${esc(profile.department||'')}${profile.position?' · '+esc(profile.position):''}${profile.joinDate?' · 입사 '+profile.joinDate:''}</div>
+      </div>
+      <div class="big">
+        <div class="n">${fmtNum(remain)}</div>
+        <div class="l">${y}년 잔여 연차 (일) · ${s.label}</div>
+      </div>
+    </div>
+
+    <div class="cal-head" style="margin-bottom:16px">
+      <div class="cal-nav">
+        <button class="btn btn-ghost btn-sm" onclick="summaryPrevYear()">◀</button>
+        <div class="cal-title" style="min-width:96px">${y}년</div>
+        <button class="btn btn-ghost btn-sm" onclick="summaryNextYear()">▶</button>
+      </div>
+      ${!hasGrant(y) ? `<span style="font-size:12.5px;color:var(--amber);font-weight:600">${y}년 총 연차가 설정되지 않았습니다. <a href="#" onclick="goTab('profile');return false;" style="color:var(--navy)">설정하기</a></span>` : ''}
+    </div>
+
+    ${ciNote}
+
+    <div class="stats">
+      <div class="stat"><div class="label">총 연차${ci<0?' (이월 반영)':''}</div><div class="val">${fmtNum(total)}<small>일</small></div></div>
+      <div class="stat a"><div class="label">사용 연차</div><div class="val">${fmtNum(used)}<small>일</small></div></div>
+      <div class="stat ${remain<0?'r':'g'}"><div class="label">잔여 연차</div><div class="val">${fmtNum(remain)}<small>일</small></div></div>
+      <div class="stat"><div class="label">사용률</div><div class="val">${rate.toFixed(0)}<small>%</small></div></div>
+    </div>
+
+    <div class="card">
+      <div class="card-head">
+        <h2>${y}년 휴가 내역</h2>
+        <span style="font-size:12.5px;color:var(--muted)">연차 ${fullCnt}일 · 반차 ${halfCnt}회</span>
+      </div>
+      <div class="table-scroll">
+        <table>
+          <thead><tr><th>휴가일</th><th>유형</th><th class="num">일수</th><th>사유</th><th>비고</th></tr></thead>
+          <tbody>${recentRows}</tbody>
+        </table>
+      </div>
+    </div>`;
+}
+
+/* ============================================================
+   휴가 내역
+   ============================================================ */
+function renderHistory(){
+  const type = document.getElementById('hType').value;
+  const from = document.getElementById('hFrom').value;
+  const to   = document.getElementById('hTo').value;
+  let list = vacations.slice().sort((a,b)=>(b.vacationDate||'').localeCompare(a.vacationDate||''));
+  list = list.filter(v=>{
+    if(type && v.vacationType!==type) return false;
+    if(from && (v.vacationDate||'')<from) return false;
+    if(to && (v.vacationDate||'')>to) return false;
+    return true;
+  });
+  const tb = document.getElementById('historyTable');
+  if(list.length===0){
+    tb.innerHTML = `<tr><td colspan="8"><div class="empty"><div class="ico">🗓️</div><p>휴가 내역이 없습니다.</p><small>휴가 등록에서 내역을 추가해 보세요.</small></div></td></tr>`;
+    return;
+  }
+  tb.innerHTML = list.map((v,i)=>`<tr>
+    <td class="num">${i+1}</td>
+    <td>${fmtDate(v.vacationDate)}</td>
+    <td>${typeTag(v.vacationType)}</td>
+    <td class="num">${fmtNum(Number(v.usedDays)||0)}</td>
+    <td>${esc(v.reason)||'-'}</td>
+    <td>${esc(v.memo)||'-'}</td>
+    <td style="color:var(--muted);font-size:12.5px">${(v.createdAt||'').slice(0,10)||'-'}</td>
+    <td>
+      <button class="btn-icon" onclick="editVacation('${v.id}')">수정</button>
+      <button class="btn-icon del" onclick="deleteVacation('${v.id}')">삭제</button>
+    </td>
+  </tr>`).join('');
+}
+function resetHistoryFilter(){
+  document.getElementById('hType').value='';
+  document.getElementById('hFrom').value='';
+  document.getElementById('hTo').value='';
+  renderHistory();
+}
+
+/* ============================================================
+   휴일근무
+   ============================================================ */
+function onHolTimeChange(){
+  const date = document.getElementById('hwDate').value;
+  const i = document.getElementById('hwIn').value;
+  const o = document.getElementById('hwOut').value;
+  const mins = workMinutes(i, o);
+  document.getElementById('hwDuration').value = (i && o && mins!=null) ? fmtDur(mins) : '-';
+  const hint = document.getElementById('hwDayHint');
+  if(!date){ hint.textContent=''; hint.style.color=''; return; }
+  const wdk = ['일','월','화','수','목','금','토'][new Date(date+'T00:00:00').getDay()];
+  const hol = HOLIDAYS[date];
+  if(hol){ hint.textContent = `${wdk}요일 · ${hol.name}`; hint.style.color='var(--red)'; }
+  else if(isWeekend(date)){ hint.textContent = `${wdk}요일 · 주말`; hint.style.color='var(--red)'; }
+  else { hint.textContent = `${wdk}요일 · 평일 (휴일이 아닙니다)`; hint.style.color='var(--amber)'; }
+  // 휴일이면 타입 미선택 시 자동으로 '휴일근무'
+  const ty = document.getElementById('hwType');
+  if(ty && isRestDay(date) && ty.value==='') ty.value = '휴일근무';
+}
+function holKind(date){
+  const hol = HOLIDAYS[date];
+  if(hol) return hol.name;
+  if(isWeekend(date)){ const g=new Date(date+'T00:00:00').getDay(); return g===0?'일요일':'토요일'; }
+  return '평일';
+}
+function saveHolwork(){
+  const date = document.getElementById('hwDate').value;
+  const i = document.getElementById('hwIn').value;
+  const o = document.getElementById('hwOut').value;
+  const type = (document.getElementById('hwType').value || '') || (isRestDay(date) ? '휴일근무' : '');
+  const reason = document.getElementById('hwReason').value.trim();
+  const memo = document.getElementById('hwMemo').value.trim();
+  if(!date){ toast('근무일을 선택해 주세요.','warn'); return; }
+
+  if(editHolId){
+    const h = holidayWorks.find(x=>x.id===editHolId);
+    if(h) Object.assign(h, {date, type, checkIn:i||'', checkOut:o||'', reason, memo, auto:false});
+    toast('출퇴근 기록 수정 완료','ok');
+  }else{
+    holidayWorks.push({id:uid('hw'), date, type, checkIn:i||'', checkOut:o||'', reason, memo, createdAt:nowISO()});
+    toast('출퇴근 기록 등록 완료','ok');
+  }
+  saveHol(); resetHolworkForm(); renderAll();
+}
+function editHolwork(id){
+  const h = holidayWorks.find(x=>x.id===id); if(!h) return;
+  editHolId = id;
+  document.getElementById('hwDate').value = h.date || '';
+  document.getElementById('hwType').value = h.type || '';
+  document.getElementById('hwIn').value = h.checkIn || '';
+  document.getElementById('hwOut').value = h.checkOut || '';
+  document.getElementById('hwReason').value = h.reason || '';
+  document.getElementById('hwMemo').value = h.memo || '';
+  document.getElementById('hwFormTitle').textContent = '출퇴근 기록 수정';
+  document.getElementById('hwSaveBtn').textContent = '수정 저장';
+  onHolTimeChange();
+  document.getElementById('hwDate').scrollIntoView({behavior:'smooth', block:'center'});
+}
+function deleteHolwork(id){
+  const h = holidayWorks.find(x=>x.id===id); if(!h) return;
+  confirmModal('출퇴근 기록 삭제', `${h.date} ${h.type||''} 기록을 삭제하시겠습니까?`, ()=>{
+    holidayWorks = holidayWorks.filter(x=>x.id!==id);
+    saveHol();
+    if(editHolId===id) resetHolworkForm();
+    toast('출퇴근 기록 삭제 완료','ok');
+    renderAll();
+  });
+}
+function resetHolworkForm(){
+  editHolId = null;
+  ['hwDate','hwIn','hwOut','hwReason','hwMemo'].forEach(id=>{ const el=document.getElementById(id); if(el) el.value=''; });
+  const ty=document.getElementById('hwType'); if(ty) ty.value='';
+  const dur=document.getElementById('hwDuration'); if(dur) dur.value='-';
+  const hint=document.getElementById('hwDayHint'); if(hint){ hint.textContent=''; hint.style.color=''; }
+  const t=document.getElementById('hwFormTitle'); if(t) t.textContent='출퇴근 기록 등록';
+  const b=document.getElementById('hwSaveBtn'); if(b) b.textContent='출퇴근 기록 등록';
+}
+function renderHolwork(){
+  const tb = document.getElementById('holworkTable'); if(!tb) return;
+  const list = holidayWorks.slice().sort((a,b)=>(b.date||'').localeCompare(a.date||''));
+  const sum = document.getElementById('hwSummary');
+  if(list.length===0){
+    tb.innerHTML = `<tr><td colspan="9"><div class="empty"><div class="ico">🛠️</div><p>출퇴근 기록이 없습니다.</p><small>휴일근무·외근·현출·출장을 등록해 보세요.</small></div></td></tr>`;
+    if(sum) sum.textContent='';
+    return;
+  }
+  let totalMin = 0;
+  tb.innerHTML = list.map((h,idx)=>{
+    const mins = workMinutes(h.checkIn, h.checkOut);
+    if(mins!=null) totalMin += mins;
+    const wdk = h.date ? ['일','월','화','수','목','금','토'][new Date(h.date+'T00:00:00').getDay()] : '';
+    const tp = h.type || '';
+    const key = tp ? workTypeKey(tp) : 'att';
+    const col = calColors[key] || DEF_COLORS[key];
+    const tpLabel = catLabel(key);
+    return `<tr>
+      <td class="num">${idx+1}</td>
+      <td>${esc(h.date)} <span style="color:var(--muted);font-size:11.5px">(${wdk})</span></td>
+      <td><span class="type-tag" style="background:${col};color:${contrastText(col)}">${esc(tpLabel)}</span></td>
+      <td>${esc(h.checkIn)||'-'}</td>
+      <td>${esc(h.checkOut)||'-'}</td>
+      <td class="num">${mins!=null?fmtDur(mins):'-'}</td>
+      <td>${esc(h.reason)||'-'}</td>
+      <td>${esc(h.memo)||'-'}</td>
+      <td>
+        <button class="btn-icon" onclick="editHolwork('${h.id}')">수정</button>
+        <button class="btn-icon del" onclick="deleteHolwork('${h.id}')">삭제</button>
+      </td>
+    </tr>`;
+  }).join('');
+  if(sum) sum.textContent = `총 ${list.length}건 · 누적 ${fmtDur(totalMin)}`;
+}
+
+/* ============================================================
+   CSV / 백업 / 복원 / 초기화
+   ============================================================ */
+function downloadCSV(filename, rows){
+  const csv = rows.map(r=>r.map(c=>{
+    const s=(c==null?'':String(c));
+    return /[",\n]/.test(s) ? '"'+s.replace(/"/g,'""')+'"' : s;
+  }).join(',')).join('\r\n');
+  const blob = new Blob(['\uFEFF'+csv], {type:'text/csv;charset=utf-8;'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a'); a.href=url; a.download=filename; a.click();
+  URL.revokeObjectURL(url);
+}
+function downloadVacCSV(){
+  if(vacations.length===0){ toast('내려받을 휴가 데이터가 없습니다.','warn'); return; }
+  const rows = [['휴가일','유형','사용일수','사유','비고','등록일']];
+  vacations.slice().sort((a,b)=>(b.vacationDate||'').localeCompare(a.vacationDate||''))
+    .forEach(v=> rows.push([v.vacationDate, v.vacationType, fmtNum(Number(v.usedDays)||0), v.reason||'', v.memo||'', (v.createdAt||'').slice(0,10)]));
+  const who = hasProfile() ? '_'+profile.name : '';
+  downloadCSV(`휴가내역${who}_${new Date().toISOString().slice(0,10)}.csv`, rows);
+  toast('CSV 다운로드 완료','ok');
+}
+function backupJSON(){
+  const data = {profile, vacations, attendance, holidayWorks, calColors, calLabels, calHidden, exportedAt:nowISO(), app:'GIT-MyLeave'};
+  const blob = new Blob([JSON.stringify(data,null,2)], {type:'application/json'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a'); a.href=url; a.download=`내연차_백업_${new Date().toISOString().slice(0,10)}.json`; a.click();
+  URL.revokeObjectURL(url);
+  toast('백업 다운로드 완료','ok');
+}
+function restoreJSON(ev){
+  const file = ev.target.files[0]; ev.target.value='';
+  if(!file) return;
+  if(!file.name.toLowerCase().endsWith('.json')){ toast('JSON 파일만 복원할 수 있습니다.','err'); return; }
+  const reader = new FileReader();
+  reader.onload = e=>{
+    let data;
+    try{ data = JSON.parse(e.target.result); }catch(err){ toast('파일을 읽을 수 없습니다. JSON 형식을 확인해 주세요.','err'); return; }
+    if(!Array.isArray(data.vacations)){ toast('백업 파일 구조가 올바르지 않습니다.','err'); return; }
+    confirmModal('백업 복원', `기존 데이터를 백업 파일로 덮어씁니다. (휴가 ${data.vacations.length}건) 계속하시겠습니까?`, ()=>{
+      profile = data.profile || null;
+      vacations = data.vacations;
+      attendance = (data.attendance && typeof data.attendance==='object') ? data.attendance : {};
+      holidayWorks = Array.isArray(data.holidayWorks) ? data.holidayWorks : [];
+      calColors = Object.assign({}, DEF_COLORS, (data.calColors && typeof data.calColors==='object') ? data.calColors : {});
+      calLabels = (data.calLabels && typeof data.calLabels==='object') ? data.calLabels : {};
+      calHidden = (data.calHidden && typeof data.calHidden==='object') ? data.calHidden : {};
+      saveProfile(); saveVac(); saveAtt(); saveHol(); saveColors(); saveLegendCfg(); applyCalColors(); fillTypeOptions();
+      toast('데이터 복원 완료','ok');
+      renderAll();
+    });
+  };
+  reader.readAsText(file);
+}
+function askReset(){
+  confirmModal('전체 초기화', '내 정보와 모든 휴가 내역이 영구 삭제됩니다. 계속하려면 아래에 "초기화"를 입력하세요.', ()=>{
+    if(document.getElementById('modalInput').value.trim() !== '초기화'){ toast('확인 문구가 일치하지 않습니다.','err'); return false; }
+    profile = null; vacations = []; attendance = {}; holidayWorks = [];
+    localStorage.removeItem(KEY_PROFILE); localStorage.removeItem(KEY_VAC);
+    localStorage.removeItem(KEY_ATT); localStorage.removeItem(KEY_HOLWORK);
+    resetVacForm();
+    if(authUser) accountPush();
+    toast('데이터가 초기화되었습니다.','ok');
+    renderAll();
+  }, true);
+}
+
+/* ============================================================
+   토스트 / 모달
+   ============================================================ */
+function toast(msg, type){
+  const wrap = document.getElementById('toastWrap');
+  const el = document.createElement('div');
+  el.className = 'toast '+(type||'');
+  const icon = type==='ok'?'✓':type==='err'?'✕':type==='warn'?'!':'ℹ';
+  el.innerHTML = `<span>${icon}</span><span>${esc(msg)}</span>`;
+  wrap.appendChild(el);
+  setTimeout(()=>{ el.style.opacity='0'; el.style.transform='translateY(10px)'; el.style.transition='.3s'; setTimeout(()=>el.remove(),300); }, 2400);
+}
+let modalCb = null;
+function confirmModal(title, msg, cb, needInput){
+  document.getElementById('modalTitle').textContent = title;
+  document.getElementById('modalMsg').textContent = msg;
+  document.getElementById('modalInputWrap').style.display = needInput?'block':'none';
+  document.getElementById('modalInput').value = '';
+  modalCb = cb;
+  document.getElementById('modalBack').classList.add('show');
+  if(needInput) setTimeout(()=>document.getElementById('modalInput').focus(),100);
+}
+function closeModal(){ document.getElementById('modalBack').classList.remove('show'); modalCb=null; }
+document.getElementById('modalOk').addEventListener('click', ()=>{
+  if(modalCb){ if(modalCb()===false) return; }
+  closeModal();
+});
+document.getElementById('modalBack').addEventListener('click', e=>{ if(e.target.id==='modalBack') closeModal(); });
+document.getElementById('dayModalBack').addEventListener('click', e=>{ if(e.target.id==='dayModalBack') closeDayModal(); });
+document.getElementById('vacEditBack').addEventListener('click', e=>{ if(e.target.id==='vacEditBack') closeVacEdit(); });
+
+/* ---------- 캘린더 표기 색상 (범례에서 선택) ---------- */
+function contrastText(hex){
+  const m = /^#?([0-9a-fA-F]{6})$/.exec(hex||''); if(!m) return '#1f2430';
+  const n = parseInt(m[1],16), r=(n>>16)&255, g=(n>>8)&255, b=n&255;
+  const yiq = (r*299 + g*587 + b*114)/1000;   // 밝기
+  return yiq >= 150 ? '#1f2430' : '#ffffff';
+}
+function applyCalColors(){
+  const root = document.documentElement.style;
+  ['full','am','pm','hol','att','hw','out','onsite','trip'].forEach(cat=>{
+    const col = calColors[cat] || DEF_COLORS[cat];
+    root.setProperty('--c-'+cat, col);
+    root.setProperty('--ct-'+cat, contrastText(col));
+  });
+}
+function syncLegendInputs(){
+  document.querySelectorAll('.lg-swatch').forEach(inp=>{
+    const cat = inp.dataset.cat;
+    inp.value = calColors[cat] || DEF_COLORS[cat];
+  });
+}
+/* 범례: 기본 4종(연차·오전/오후 반차·공휴일)은 항상, 나머지는 데이터가 있을 때만 표시 */
+function renderLegend(){
+  const box = document.getElementById('calLegend'); if(!box) return;
+  const hasType = lbl => holidayWorks.some(h => (h.type||'')===lbl);
+  const hasAtt = Object.keys(attendance).some(dt=>{
+    const a = attendance[dt];
+    return a && (a.in || a.out) && !holidayWorks.some(h=>h.date===dt);
+  }) || holidayWorks.some(h => !h.type && (h.checkIn||h.checkOut));
+  const shown = {
+    full:true, am:true, pm:true, hol:true,
+    att:hasAtt, hw:hasType('휴일근무'), out:hasType('외근'),
+    onsite:hasType('현출'), trip:hasType('출장')
+  };
+  const avail = LEGEND_KEYS.filter(k=>shown[k]);
+
+  if(legendEditMode){
+    // 편집 모드: 표시 대상 전체(숨긴 것 포함)를 색상·이름·표시여부 편집
+    box.innerHTML = avail.map(k=>{
+      const off = !!calHidden[k];
+      const col = calColors[k] || DEF_COLORS[k];
+      return `<span class="lg-item${off?' lg-off':''}">
+        <input type="color" class="lg-swatch" data-cat="${k}" value="${col}" onchange="onLegendColor(this)" title="색상 변경">
+        <input type="text" class="lg-name" data-cat="${k}" value="${esc(catLabel(k))}" onchange="onLegendName(this)" title="이름 변경">
+        <input type="checkbox" class="lg-vis" data-cat="${k}" ${off?'':'checked'} onchange="setLegendVisible('${k}', this.checked)" title="캘린더 표시">
+      </span>`;
+    }).join('')
+      + `<button class="lg-edit" type="button" onclick="toggleLegendEdit()">완료</button>`
+      + `<button class="lg-reset" type="button" onclick="resetCalColors()">범례 초기화</button>`;
+  }else{
+    // 보기 모드: 숨기지 않은 항목만 표시 (편집 컨트롤 없음)
+    const visible = avail.filter(k=>!calHidden[k]);
+    box.innerHTML = visible.map(k=>{
+      const col = calColors[k] || DEF_COLORS[k];
+      return `<span class="lg-view"><i class="lg-dot" style="background:${col}"></i>${esc(catLabel(k))}</span>`;
+    }).join('')
+      + `<button class="lg-edit" type="button" onclick="toggleLegendEdit()">편집</button>`;
+  }
+}
+function toggleLegendEdit(){ legendEditMode = !legendEditMode; renderLegend(); }
+function setLegendVisible(key, checked){
+  calHidden[key] = !checked;
+  saveLegendCfg();
+  renderCalendar();   // 캘린더 표기 갱신(범례도 다시 그려짐)
+}
+function onLegendName(input){
+  const cat = input.dataset.cat;
+  const v = input.value.trim();
+  if(v) calLabels[cat] = v; else delete calLabels[cat];
+  saveLegendCfg();
+  fillTypeOptions();
+  renderCalendar();
+  renderHolwork();
+}
+function toggleLegend(key){
+  calHidden[key] = !calHidden[key];
+  saveLegendCfg();
+  renderCalendar();   // 범례 + 캘린더 표기 갱신
+}
+/* 근무 타입 드롭다운의 표시 이름을 사용자 지정 범례 이름과 동기화 */
+function fillTypeOptions(){
+  const sel = document.getElementById('hwType'); if(!sel) return;
+  const cur = sel.value;
+  sel.innerHTML = `<option value="">(선택 안 함)</option>` +
+    WORK_TYPES.map(t=>`<option value="${t.label}">${esc(catLabel(t.key))}</option>`).join('');
+  sel.value = cur;
+}
+function onLegendColor(input){
+  const cat = input.dataset.cat;
+  calColors[cat] = input.value;
+  applyCalColors();
+  saveColors();
+}
+function resetCalColors(){
+  calColors = Object.assign({}, DEF_COLORS);
+  calLabels = {};
+  calHidden = {};
+  applyCalColors();
+  saveColors();
+  saveLegendCfg();
+  fillTypeOptions();
+  renderCalendar();
+  renderHolwork();
+  toast('범례를 기본값으로 되돌렸습니다.','ok');
+}
+
+/* ============================================================
+   캘린더
+   ============================================================ */
+function pad2(n){ return String(n).padStart(2,'0'); }
+function ymd(y,m,d){ return `${y}-${pad2(m+1)}-${pad2(d)}`; }
+function typeClass(t){ return {'연차':'t-full','오전 반차':'t-am','오후 반차':'t-pm'}[t] || 't-full'; }
+function vacKey(t){ return {'연차':'full','오전 반차':'am','오후 반차':'pm'}[t] || 'full'; }
+function typeShort(t){ return t==='연차' ? '연차' : t==='오전 반차' ? '오전' : '오후'; }
+function calInit(){ const t=new Date(); calYear=t.getFullYear(); calMonth=t.getMonth(); }
+function calPrev(){ if(--calMonth<0){ calMonth=11; calYear--; } renderCalendar(); }
+function calNext(){ if(++calMonth>11){ calMonth=0; calYear++; } renderCalendar(); }
+function calToday(){ calInit(); renderCalendar(); }
+
+function renderCalendar(){
+  if(calYear==null) calInit();
+  document.getElementById('calTitle').textContent = `${calYear}년 ${calMonth+1}월`;
+  const dows = ['일','월','화','수','목','금','토'];
+  document.getElementById('calDow').innerHTML =
+    dows.map((d,i)=>`<div class="cal-dow ${i===0?'sun':i===6?'sat':''}">${d}</div>`).join('');
+
+  const byDate = {};
+  vacations.forEach(v=>{ (byDate[v.vacationDate] = byDate[v.vacationDate] || []).push(v); });
+
+  const firstDow = new Date(calYear, calMonth, 1).getDay();     // 이 달 1일의 요일
+  const dim = new Date(calYear, calMonth+1, 0).getDate();       // 이 달 일수
+  const prevDim = new Date(calYear, calMonth, 0).getDate();     // 이전 달 일수
+  const today = new Date();
+  const todayStr = ymd(today.getFullYear(), today.getMonth(), today.getDate());
+
+  let cells = '', monthUsed = 0;
+  for(let i=0;i<42;i++){
+    let y=calYear, m=calMonth, d, other=false;
+    if(i < firstDow){ d = prevDim - firstDow + 1 + i; m=calMonth-1; other=true; if(m<0){m=11;y--;} }
+    else if(i >= firstDow+dim){ d = i - firstDow - dim + 1; m=calMonth+1; other=true; if(m>11){m=0;y++;} }
+    else { d = i - firstDow + 1; }
+
+    const dateStr = ymd(y,m,d);
+    const dow = i % 7;
+    const list = byDate[dateStr] || [];
+    if(!other) list.forEach(v=>monthUsed += Number(v.usedDays)||0);
+
+    const chips = list.filter(v=>!calHidden[vacKey(v.vacationType)])
+      .map(v=>`<div class="cal-chip clickable ${typeClass(v.vacationType)}" onclick="event.stopPropagation(); openVacEdit('${v.id}')" title="${esc(v.vacationType)}${v.reason?' · '+esc(v.reason):''} (클릭 시 수정)">${typeShort(v.vacationType)}</div>`).join('');
+    const hol = HOLIDAYS[dateStr];
+    const showHol = hol && !other && !calHidden['hol'];
+    const holEl = showHol ? `<div class="cal-hol${hol.sub?' sub':''}" title="${esc(hol.name)}">${esc(hol.name)}</div>` : '';
+
+    // 근무 표기: 출퇴근 기록(타입 색) 우선, 없으면 출퇴근(att 색)
+    let workEl = '';
+    if(!other){
+      let inT='', outT='', cls='att';
+      const rec = holidayWorks.find(h=>h.date===dateStr);
+      if(rec){
+        inT = rec.checkIn || ''; outT = rec.checkOut || '';
+        cls = rec.type ? workTypeKey(rec.type) : 'att';
+      }else{
+        const att = attendance[dateStr];
+        if(att && (att.in || att.out)){ inT = att.in || ''; outT = att.out || ''; cls = 'att'; }
+      }
+      if((inT || outT) && !calHidden[cls]){
+        const mins = workMinutes(inT, outT);
+        let label, wrap='';
+        if(inT && outT && mins!=null){ label = `${inT}-${outT} (${fmtDurShort(mins)})`; wrap = ' wtime'; }
+        else if(inT) label = inT;
+        else label = `퇴 ${outT}`;
+        const tName = (rec && rec.type) ? catLabel(workTypeKey(rec.type))+' · ' : '';
+        const title = (inT && outT) ? `${tName}출근 ${esc(inT)} · 퇴근 ${esc(outT)} · 근무 ${fmtDur(mins)}` : (inT ? '출근 시간' : '퇴근 시간');
+        workEl = `<div class="cal-chip ${cls}${wrap}" title="${title}">${esc(label)}</div>`;
+      }
+    }
+
+    const cls = ['cal-cell'];
+    if(other){ cls.push('other'); }
+    else { if(dow===0) cls.push('sun'); if(dow===6) cls.push('sat'); if(showHol) cls.push('holiday'); if(dateStr===todayStr) cls.push('today'); }
+    const click = other ? '' : `onclick="openDayModal('${dateStr}')"`;
+    cells += `<div class="${cls.join(' ')}" ${click}><div class="cal-daynum">${d}</div>${holEl}${chips}${workEl}</div>`;
+  }
+  document.getElementById('calGrid').innerHTML = cells;
+  document.getElementById('calMonthUsed').textContent = monthUsed>0 ? `이번 달 사용 ${fmtNum(monthUsed)}일` : '';
+  renderLegend();
+}
+
+/* 날짜 클릭 → 해당 날짜로 휴가 등록 화면 열기 (모달의 버튼에서 사용) */
+function pickDay(dateStr){
+  if(!hasProfile()){ toast('먼저 내 정보를 입력해 주세요.','warn'); goTab('profile'); return; }
+  resetVacForm();
+  goTab('register');
+  document.getElementById('vacDate').value = dateStr;
+  onStartChange();
+}
+
+/* ---------- 날짜 상세 모달 (휴가 + 출퇴근 + 휴일근무) ---------- */
+function openDayModal(dateStr){
+  dayModalDate = dateStr;
+  const hol = HOLIDAYS[dateStr];
+  const rest = isRestDay(dateStr);
+  const wdk = ['일','월','화','수','목','금','토'][new Date(dateStr+'T00:00:00').getDay()];
+  document.getElementById('dayModalTitle').textContent = `${dateStr} (${wdk})`;
+  const badge = hol ? `<span class="type-tag" style="background:#fdecec;color:var(--red)">${esc(hol.name)}</span>`
+              : (rest ? `<span class="type-tag" style="background:#eef1f5;color:var(--muted)">주말</span>` : '');
+  document.getElementById('dayModalBadge').innerHTML = badge;
+
+  // 휴가(연차/반차) 목록
+  const vList = vacations.filter(v=>v.vacationDate===dateStr);
+  const vHtml = vList.length
+    ? vList.map(v=>`<div class="day-row clickable" onclick="openVacEdit('${v.id}')" title="클릭하면 이 휴가를 수정합니다">${typeTag(v.vacationType)}<span style="color:var(--muted);font-size:12.5px">${esc(v.reason)||'사유 없음'}</span><span class="edit-hint">수정 ›</span></div>`).join('')
+    : `<div style="color:var(--muted);font-size:12.5px">등록된 연차·반차가 없습니다.</div>`;
+  document.getElementById('dayModalVac').innerHTML = vHtml;
+
+  // 출퇴근 입력값 채우기
+  const att = attendance[dateStr] || {};
+  document.getElementById('dayIn').value = att.in || '';
+  document.getElementById('dayOut').value = att.out || '';
+  updateDayWorkHint();
+
+  // 출퇴근 기록 등록 버튼(평일·휴일 모두 노출)
+  const hwBtn = document.getElementById('dayHolworkBtn');
+  hwBtn.style.display = '';
+
+  document.getElementById('dayModalBack').classList.add('show');
+}
+function closeDayModal(){ document.getElementById('dayModalBack').classList.remove('show'); dayModalDate=null; }
+function updateDayWorkHint(){
+  const i = document.getElementById('dayIn').value, o = document.getElementById('dayOut').value;
+  const el = document.getElementById('dayWorkHint');
+  const mins = workMinutes(i, o);
+  el.textContent = (i && o && mins!=null) ? `근무 시간 ${fmtDur(mins)}` : (i ? '출근 시간만 저장됩니다.' : '');
+}
+function saveDayAttendance(){
+  if(!dayModalDate) return;
+  const i = document.getElementById('dayIn').value, o = document.getElementById('dayOut').value;
+  if(!i && !o){ toast('출근 또는 퇴근 시간을 입력해 주세요.','warn'); return; }
+  const d = dayModalDate;
+  attendance[d] = {in:i||'', out:o||''};
+  saveAtt();
+  // 평일·휴일 구분 없이 출퇴근 기록 내역에 자동 반영 (휴일이면 '휴일근무', 평일이면 '출퇴근')
+  const rest = isRestDay(d);
+  let rec = holidayWorks.find(h=>h.date===d && h.auto);
+  if(rec){
+    rec.checkIn=i||''; rec.checkOut=o||'';
+    if(rest && !rec.type) rec.type='휴일근무';
+  }else{
+    holidayWorks.push({id:uid('hw'), date:d, type:(rest?'휴일근무':''), checkIn:i||'', checkOut:o||'', reason:'', memo:'', auto:true, createdAt:nowISO()});
+  }
+  saveHol();
+  toast(rest ? '출퇴근 저장 · 출퇴근 기록(휴일근무)에 반영됨' : '출퇴근 저장 · 출퇴근 기록 내역에 반영됨','ok');
+  renderAll();
+  closeDayModal();
+}
+function deleteDayAttendance(){
+  if(!dayModalDate) return;
+  const d = dayModalDate;
+  let removed = false;
+  if(attendance[d]){ delete attendance[d]; saveAtt(); removed = true; }
+  // 자동 생성된 휴일출퇴근 기록도 함께 제거 (사용자가 수정한 기록은 유지)
+  const before = holidayWorks.length;
+  holidayWorks = holidayWorks.filter(h=>!(h.date===d && h.auto));
+  if(holidayWorks.length!==before){ saveHol(); }
+  if(removed) toast('출퇴근 기록 삭제','ok');
+  renderAll();
+  closeDayModal();
+}
+function dayGoRegister(){ const d=dayModalDate; closeDayModal(); pickDay(d); }
+function dayGoHolwork(){
+  const d = dayModalDate; closeDayModal();
+  goTab('holwork');
+  // 이미 등록된(자동 포함) 휴일출퇴근 기록이 있으면 그 기록을 편집, 없으면 새로 입력
+  const existing = holidayWorks.find(h=>h.date===d && h.auto) || holidayWorks.find(h=>h.date===d);
+  if(existing){
+    editHolwork(existing.id);
+    return;
+  }
+  resetHolworkForm();
+  document.getElementById('hwDate').value = d;
+  const att = attendance[d];
+  if(att){ if(att.in) document.getElementById('hwIn').value = att.in; if(att.out) document.getElementById('hwOut').value = att.out; }
+  onHolTimeChange();
+}
+
+/* ============================================================
+   제목 편집
+   ============================================================ */
+function loadMeta(){
+  const t = localStorage.getItem(KEY_TITLE); if(t) appTitle = t;
+}
+function applyTitle(){
+  const h = document.getElementById('appTitle'); if(h) h.textContent = appTitle;
+  const b = document.getElementById('authBrandName'); if(b) b.textContent = appTitle;   // 로그인 화면 브랜드명도 동기화
+  document.title = appTitle;
+  const inp = document.getElementById('titleInput'); if(inp) inp.value = appTitle;
+}
+function saveTitle(){
+  const v = document.getElementById('titleInput').value.trim();
+  appTitle = v || 'LeaveUP';
+  localStorage.setItem(KEY_TITLE, appTitle);
+  applyTitle();
+  toast('제목이 저장되었습니다.','ok');
+  syncPushDebounced();
+}
+
+/* ============================================================
+   계정 로그인 / 계정별 클라우드 저장 (Supabase Auth)
+   SB_CFG(url,key)를 비워두면 로그인 없이 이 브라우저에만 저장됩니다.
+   ============================================================ */
+function authEnabled(){ return !!(SB_CFG.url && SB_CFG.key && window.supabase); }
+
+function accountStatus(msg, kind){
+  const el = document.getElementById('accountStatus'); if(!el) return;
+  el.textContent = msg || '';
+  el.style.color = kind==='err' ? 'var(--red)' : kind==='on' ? 'var(--green-dark)' : 'var(--muted)';
+}
+function showLogin(msg){
+  document.getElementById('authOverlay').classList.add('show');
+  const note = document.getElementById('authNote');
+  if(msg){ note.style.display=''; note.textContent = msg; } else { note.style.display='none'; }
+}
+function hideLogin(){ document.getElementById('authOverlay').classList.remove('show'); }
+function authMsg(text, ok){
+  const el = document.getElementById('authMsg');
+  el.textContent = text || ''; el.className = 'auth-msg' + (ok?' ok':'');
+}
+function setAuthMode(mode){
+  authMode = mode;
+  const $ = id => document.getElementById(id);
+  $('authEmailField').style.display = (mode==='reset') ? 'none' : '';
+  $('authPwField').style.display    = (mode==='forgot') ? 'none' : '';
+  $('authSignupRow').style.display  = (mode==='login' || mode==='signup') ? '' : 'none';
+  $('authForgotRow').style.display  = (mode==='login') ? '' : 'none';
+  $('authBackRow').style.display    = (mode==='forgot') ? '' : 'none';
+  $('authRememberRow').style.display = (mode==='login' || mode==='signup') ? '' : 'none';
+  $('authTitle').style.display = (mode==='login') ? 'none' : '';   // 로그인 화면에서는 상단 '로그인' 제목 숨김
+  $('authRemember').checked = autoLoginEnabled();   // 이전 선택값 반영
+  const pw = $('authPw');
+  authMsg('');
+  if(mode==='login'){
+    $('authTitle').textContent='로그인'; $('authSubmit').textContent='로그인';
+    $('authToggleText').textContent='계정이 없으신가요?'; $('authToggleLink').textContent='회원가입';
+    pw.setAttribute('autocomplete','current-password'); pw.setAttribute('placeholder','6자 이상');
+  }else if(mode==='signup'){
+    $('authTitle').textContent='회원가입'; $('authSubmit').textContent='회원가입';
+    $('authToggleText').textContent='이미 계정이 있으신가요?'; $('authToggleLink').textContent='로그인';
+    pw.setAttribute('autocomplete','new-password'); pw.setAttribute('placeholder','6자 이상');
+  }else if(mode==='forgot'){
+    $('authTitle').textContent='비밀번호 찾기'; $('authSubmit').textContent='재설정 메일 보내기';
+    authMsg('가입한 이메일을 입력하면 재설정 링크를 보내드립니다.');
+  }else if(mode==='reset'){
+    $('authTitle').textContent='새 비밀번호 설정'; $('authSubmit').textContent='비밀번호 변경';
+    pw.value=''; pw.setAttribute('autocomplete','new-password'); pw.setAttribute('placeholder','새 비밀번호 (6자 이상)');
+    authMsg('새 비밀번호를 입력한 뒤 [비밀번호 변경]을 누르세요.');
+  }
+}
+function authToggleMode(){ setAuthMode(authMode==='signup' ? 'login' : 'signup'); }
+function authErrText(e){
+  const m = ((e && e.message) || String(e) || '').toLowerCase();
+  if(m.includes('failed to fetch') || m.includes('load failed') || m.includes('networkerror') || m.includes('network request failed'))
+    return '서버에 연결하지 못했습니다. 인터넷 연결을 확인하거나, 광고·추적 차단 확장 프로그램을 끄고 다시 시도해 주세요. (파일을 직접 열지 말고 웹서버/호스팅으로 접속하면 해결되는 경우가 많습니다.)';
+  if(m.includes('invalid login') || m.includes('invalid_credentials') || m.includes('invalid credentials')) return '이메일 또는 비밀번호를 확인해 주세요.';
+  if(m.includes('already registered') || m.includes('already been registered')) return '이미 가입된 이메일입니다. 로그인해 주세요.';
+  if(m.includes('password') && m.includes('6')) return '비밀번호는 6자 이상이어야 합니다.';
+  if(m.includes('email') && m.includes('valid')) return '올바른 이메일 형식이 아닙니다.';
+  if(m.includes('password') && (m.includes('different') || m.includes('same') || m.includes('old password'))) return '기존과 다른 새 비밀번호를 입력해 주세요.';
+  if(m.includes('rate limit') || m.includes('too many')) return '요청이 많습니다. 잠시 후 다시 시도해 주세요.';
+  return e && e.message ? e.message : '요청을 처리하지 못했습니다.';
+}
+async function authSubmit(){
+  const email = document.getElementById('authEmail').value.trim();
+  const pw = document.getElementById('authPw').value;
+  const btn = document.getElementById('authSubmit'); btn.disabled = true; authMsg('처리 중…');
+  justAuthenticated = false;
+  try{
+    if(authMode==='forgot'){
+      if(!email){ authMsg('이메일을 입력하세요.'); return; }
+      const redirectTo = location.origin + location.pathname;
+      const { error } = await sb.auth.resetPasswordForEmail(email, { redirectTo });
+      if(error) throw error;
+      authMsg('재설정 메일을 보냈습니다. 메일의 링크를 눌러 새 비밀번호를 설정하세요.', true);
+    }else if(authMode==='reset'){
+      if(!pw){ authMsg('새 비밀번호를 입력하세요.'); return; }
+      const { error } = await sb.auth.updateUser({ password: pw });
+      if(error) throw error;
+      recoveryMode = false;
+      authMsg('비밀번호가 변경되었습니다.', true);
+      const { data } = await sb.auth.getUser();
+      if(data && data.user){ recordLoginTime(); onAuthed(data.user); toast('비밀번호가 변경되었습니다.','ok'); }
+      else { setAuthMode('login'); }
+    }else if(authMode==='signup'){
+      if(!email || !pw){ authMsg('이메일과 비밀번호를 입력하세요.'); return; }
+      justAuthenticated = true;   // 가입 즉시 세션이 생기면 신규 로그인으로 처리
+      setAutoLoginPref(document.getElementById('authRemember').checked);   // 자동로그인 선택 저장
+      const { data, error } = await sb.auth.signUp({ email, password: pw });
+      if(error) throw error;
+      if(data && data.session){ authMsg('가입되어 로그인되었습니다.', true); }
+      else { setAuthMode('login'); authMsg('가입되었습니다. 로그인해 주세요.', true); }
+    }else{ // login
+      if(!email || !pw){ authMsg('이메일과 비밀번호를 입력하세요.'); return; }
+      justAuthenticated = true;   // 자격증명 로그인 → 24시간 타이머 시작 대상
+      setAutoLoginPref(document.getElementById('authRemember').checked);   // 자동로그인 선택 저장
+      const { error } = await sb.auth.signInWithPassword({ email, password: pw });
+      if(error) throw error;
+    }
+  }catch(e){ justAuthenticated = false; authMsg(authErrText(e)); }
+  finally{ btn.disabled = false; }
+}
+async function doLogout(){
+  try{ if(sb) await sb.auth.signOut(); }catch(e){}
+}
+
+/* 원격 데이터(payload)를 앱 상태에 적용 */
+function applyRemoteData(d){
+  applyingRemote = true;
+  if(d.title){ appTitle = d.title; localStorage.setItem(KEY_TITLE, appTitle); }
+  profile = d.profile || null; migrateProfile(); localStorage.setItem(KEY_PROFILE, JSON.stringify(profile));
+  vacations = Array.isArray(d.vacations) ? d.vacations : []; localStorage.setItem(KEY_VAC, JSON.stringify(vacations));
+  attendance = (d.attendance && typeof d.attendance==='object') ? d.attendance : {}; localStorage.setItem(KEY_ATT, JSON.stringify(attendance));
+  holidayWorks = Array.isArray(d.holidayWorks) ? d.holidayWorks : []; localStorage.setItem(KEY_HOLWORK, JSON.stringify(holidayWorks));
+  calColors = Object.assign({}, DEF_COLORS, (d.calColors && typeof d.calColors==='object') ? d.calColors : {}); localStorage.setItem(KEY_COLORS, JSON.stringify(calColors)); applyCalColors();
+  calLabels = (d.calLabels && typeof d.calLabels==='object') ? d.calLabels : {}; localStorage.setItem(KEY_LABELS, JSON.stringify(calLabels));
+  calHidden = (d.calHidden && typeof d.calHidden==='object') ? d.calHidden : {}; localStorage.setItem(KEY_HIDDEN, JSON.stringify(calHidden)); fillTypeOptions();
+  applyingRemote = false;
+  applyTitle(); renderAll();
+}
+function clearLocalData(){
+  [KEY_PROFILE,KEY_VAC,KEY_ATT,KEY_HOLWORK,KEY_COLORS,KEY_LABELS,KEY_HIDDEN].forEach(k=>localStorage.removeItem(k));
+  profile=null; vacations=[]; attendance={}; holidayWorks=[];
+  calColors=Object.assign({},DEF_COLORS); calLabels={}; calHidden={};
+  applyCalColors(); fillTypeOptions(); renderAll();
+}
+function updateAccountUI(){
+  const info = document.getElementById('accountInfo');
+  const actions = document.getElementById('accountActions');
+  const setup = document.getElementById('accountSetup');
+  if(!info) return;
+  if(!authEnabled()){
+    info.innerHTML = '로그인 기능이 꺼져 있습니다. <b>이 브라우저에만 저장</b>됩니다.<br><span style="color:var(--muted);font-size:12.5px">파일 상단 <code>SB_CFG</code>에 Supabase URL·키를 넣으면 계정 로그인이 켜집니다.</span>';
+    if(actions) actions.style.display='none';
+    if(setup) setup.style.display='';
+    return;
+  }
+  if(authUser){
+    info.innerHTML = `<b>${esc(authUser.email||'로그인됨')}</b> 계정으로 로그인되어 있습니다.<br><span style="color:var(--muted);font-size:12.5px">데이터가 계정에 자동 저장되어 다른 기기에서도 이어집니다.</span>`;
+    if(actions) actions.style.display='';
+    if(setup) setup.style.display='none';
+  }else{
+    info.textContent = '로그인이 필요합니다.';
+    if(actions) actions.style.display='none';
+  }
+}
+async function onAuthed(user){
+  authUser = { id:user.id, email:user.email };
+  hideLogin();
+  updateAccountUI();
+  startSessionWatch();   // 24시간 만료 감시 시작
+  await accountPull();
+}
+function onSignedOut(){
+  const wasAuthed = !!authUser;
+  authUser = null;
+  clearLoginTime();      // 로그아웃 시 로그인 시각 제거(자동로그인 방지)
+  if(wasAuthed){ clearLocalData(); }
+  updateAccountUI();
+  document.getElementById('authPw').value='';
+  if(!recoveryMode) setAuthMode('login');
+  showLogin();
+}
+async function accountPull(){
+  if(!authUser) return;
+  accountStatus('불러오는 중…','off');
+  try{
+    const { data, error } = await sb.from('leave_data').select('data').eq('user_id', authUser.id).maybeSingle();
+    if(error) throw error;
+    if(data && data.data){
+      applyRemoteData(data.data);
+      accountStatus('동기화됨 · '+new Date().toLocaleTimeString('ko-KR'),'on');
+    }else{
+      // 신규 계정: 이 기기에 기존 데이터가 있으면 계정으로 올림(마이그레이션)
+      if(hasProfile()){
+        await accountPush();
+        accountStatus('이 기기의 데이터를 계정에 저장했습니다.','on');
+      }else{
+        renderAll();
+        accountStatus('새 계정입니다 · 내 정보를 등록해 주세요.','off');
+        goTab('profile');
+      }
+    }
+  }catch(e){ accountStatus('불러오기 오류: '+authErrText(e),'err'); }
+}
+async function accountPush(){
+  if(!authUser || !sb) return;
+  try{
+    const payload = { title:appTitle, profile, vacations, attendance, holidayWorks, calColors, calLabels, calHidden };
+    const { error } = await sb.from('leave_data').upsert(
+      { user_id:authUser.id, data:payload, updated_at:new Date().toISOString() },
+      { onConflict:'user_id' }
+    );
+    if(error) throw error;
+    accountStatus('저장됨 · '+new Date().toLocaleTimeString('ko-KR'),'on');
+  }catch(e){ accountStatus('저장 오류: '+authErrText(e),'err'); }
+}
+function syncPushDebounced(){
+  if(!authUser || applyingRemote) return;
+  clearTimeout(pushTimer);
+  pushTimer = setTimeout(accountPush, 600);
+}
+async function initAuth(){
+  if(!authEnabled()){
+    updateAccountUI();
+    if(!hasProfile()) goTab('profile');
+    return;   // 로컬 전용 모드 (로그인 게이트 없음)
+  }
+  try{ sb = window.supabase.createClient(SB_CFG.url, SB_CFG.key); }
+  catch(e){ showLogin('로그인 모듈 초기화 실패: '+authErrText(e)); return; }
+  showLogin();   // 세션 확인 전까지 오버레이로 앱 내용 가림
+  sb.auth.onAuthStateChange((event, session)=>{
+    if(event==='PASSWORD_RECOVERY'){
+      recoveryMode = true;
+      showLogin(); setAuthMode('reset');
+      return;
+    }
+    if(session && session.user){
+      if(recoveryMode) return;   // 재설정 중에는 자동 로그인 보류
+      if(justAuthenticated){
+        // 방금 자격증명으로 로그인함 → 24시간 타이머 시작 후 진입
+        justAuthenticated = false;
+        recordLoginTime();
+        if(!authUser || authUser.id!==session.user.id) onAuthed(session.user);
+      }else{
+        // 저장된 세션 복원(자동 로그인 후보) → 24시간 지났으면 차단
+        if(!authUser || authUser.id!==session.user.id) tryResumeSession(session.user);
+      }
+    }else{
+      onSignedOut();
+    }
+  });
+  try{
+    const { data } = await sb.auth.getSession();
+    if(data && data.session && data.session.user){ if(!authUser && !recoveryMode) tryResumeSession(data.session.user); }
+    else if(!recoveryMode){ showLogin(); }
+  }catch(e){ showLogin(authErrText(e)); }
+}
+
+/* ============================================================
+   전체 렌더 / 초기화
+   ============================================================ */
+function renderAll(){
+  fillProfileForm();
+  showBalance();
+  renderSummary();
+  renderCalendar();
+  renderHistory();
+  renderHolwork();
+}
+
+loadData();
+loadMeta();
+applyCalColors();
+fillTypeOptions();
+calInit();
+showUsedDays();
+applyTitle();
+renderAll();
+initAuth();   // 계정 로그인 게이트 + 계정별 클라우드 저장 (설정 없으면 로컬 전용)
+document.addEventListener('visibilitychange', ()=>{ if(!document.hidden) enforceSessionExpiry(); });   // 탭 복귀 시 세션 만료 재검사
+
+/* GitHub Pages에 올라간 index.html의 최신 커밋(업로드) 날짜를 가져와 릴리즈 날짜로 표기.
+   실패하거나 GitHub Pages가 아니면 하드코딩된 날짜를 그대로 사용. */
+async function loadReleaseDate(){
+  try{
+    const host = location.hostname;
+    if(!/\.github\.io$/.test(host)) return;                 // GitHub Pages에서만 시도
+    const owner = host.split('.')[0];
+    const repo  = location.pathname.split('/').filter(Boolean)[0];
+    if(!owner || !repo) return;
+    const res = await fetch(`https://api.github.com/repos/${owner}/${repo}/commits?path=index.html&per_page=1`,
+                            {headers:{'Accept':'application/vnd.github+json'}});
+    if(!res.ok) return;
+    const arr = await res.json();
+    const iso = arr && arr[0] && arr[0].commit && ((arr[0].commit.committer||{}).date || (arr[0].commit.author||{}).date);
+    if(!iso) return;
+    const dt = new Date(iso);
+    if(isNaN(dt)) return;
+    const y=dt.getFullYear(), m=String(dt.getMonth()+1).padStart(2,'0'), d=String(dt.getDate()).padStart(2,'0');
+    const el = document.getElementById('relDate');
+    if(el) el.textContent = `rel. ${y}-${m}-${d}`;
+  }catch(e){ /* 실패 시 하드코딩 날짜 유지 */ }
+}
+loadReleaseDate();
+</script>
+</body>
+</html>
